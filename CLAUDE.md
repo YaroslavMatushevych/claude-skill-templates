@@ -1,6 +1,6 @@
 # Instructions for Claude
 
-This repo is a skill constructor (`scripts/skill.mjs`) and nine templates. Use the constructor. Do not write a skill file by hand.
+This repo is a skill constructor (`scripts/skill.mjs`) and six templates: `workflow`, `investigate`, `generate`, `review`, `knowledge`, `guardrail`. Use the constructor. Do not write a skill file by hand.
 
 To build a skill:
 

@@ -1,13 +1,13 @@
 ---
-name: reviewer
-description: Review a change and return a ranked list of problems with a verdict. Use when asked to review a pull request, a diff or a branch. Read-only.
-argument-hint: [pull request number, branch or empty for the current diff]
+name: review
+description: Review a change or a document against clear criteria and return ranked findings with a verdict. Read-only. Use when asked to review something.
+argument-hint: [what to review]
 allowed-tools: Read Grep Glob Bash(git diff *) Bash(git log *) Bash(git show *)
 context: fork
 ---
 Review: $ARGUMENTS
 
-Read the change and the code around it. Check, in this order:
+Read the thing and the context around it. Check, in this order:
 
 1. Correctness: does it do what it claims?
 2. Tests: is every changed behaviour covered?
@@ -27,7 +27,7 @@ End with one line: `Verdict: approve` or `Verdict: changes needed`. If you find 
 ## Rules
 
 - Do not edit any file.
-- Report only what you can point to in the code. Do not report taste.
+- Report only what you can point to. Do not report taste.
 
 ## Gotchas
 

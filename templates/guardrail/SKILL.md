@@ -1,6 +1,6 @@
 ---
-name: verifier
-description: Check that a claim is true with fresh evidence before it is reported. Use before you say that work is done, fixed or passing.
+name: guardrail
+description: Make sure one rule is followed before a claim or an action. Use before you say that work is done, fixed or safe.
 ---
 ```
 NO "DONE" WITHOUT EVIDENCE FROM THIS MESSAGE
@@ -28,4 +28,4 @@ NO "DONE" WITHOUT EVIDENCE FROM THIS MESSAGE
 
 ## Gotchas
 
-- Do not trust a green result from an earlier step. Evidence must be from after the last change.
+- Evidence must be from after the last change. A green result from an earlier step does not count.

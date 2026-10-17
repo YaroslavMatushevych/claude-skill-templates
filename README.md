@@ -39,29 +39,26 @@ Why `--when` is required: the words in the pointer decide when Claude opens the 
 
 ## The templates
 
-Each template is a skill that works as it is. Each has an `INSTRUCTIONS.md` with **Change**, **Keep** and **Test**.
+Six templates. Each is for a different purpose, and each works as it is. Each has an `INSTRUCTIONS.md` with **Change**, **Keep** and **Test**.
 
-| Template | What it does | Use it when |
+| Template | Purpose | Use it when |
 |---|---|---|
-| [`clarifier`](templates/clarifier/) | Asks questions until a request is clear. | Claude starts before it understands you. |
-| [`explorer`](templates/explorer/) | Finds things in the code, returns paths and a short answer. Read-only. | "Where is X?" "How does Y work here?" |
-| [`planner`](templates/planner/) | Makes a plan of at most 10 small steps, each with a check. Read-only. | A change touches more than one file. |
-| [`implementer`](templates/implementer/) | Builds an approved plan. Check first, stops if it fails twice. | The plan is approved. |
-| [`tester`](templates/tester/) | Writes failing tests from acceptance criteria. | You want tests before code. |
-| [`debugger`](templates/debugger/) | Finds the cause of a failure by testing hypotheses. | Something is broken and you do not know why. |
-| [`reviewer`](templates/reviewer/) | Returns ranked problems and a verdict. Read-only. | You want a review before merge. |
-| [`verifier`](templates/verifier/) | Shows fresh evidence before it says "done". | Claude says "fixed" without proof. |
-| [`writer`](templates/writer/) | Writes a spec, plan or summary from what is known. | A discussion is done and you want it on paper. |
+| [`workflow`](templates/workflow/) | Do a repeatable task in fixed steps, with a check on each step. | You do the same task in the same order again and again. Example: ticket to pull request. |
+| [`investigate`](templates/investigate/) | Answer "where", "how" or "why" with proof. Read-only. | You ask where something is, how it works, or why it fails. |
+| [`generate`](templates/generate/) | Make an output in a fixed shape from known facts. | You want a plan, spec, summary or message in the same format every time. |
+| [`review`](templates/review/) | Check something against criteria. Ranked findings and a verdict. Read-only. | You want a second opinion before merge. |
+| [`knowledge`](templates/knowledge/) | Your traps and rules for one tool, library or area. No steps. | Claude makes the same mistake with it in more than one session. |
+| [`guardrail`](templates/guardrail/) | One rule that must be followed before a claim or an action. | Claude says "done" without proof, or skips a step in a hurry. |
 
-A common order: `clarifier`, `planner`, `implementer`, `reviewer`, `verifier`. The others fit anywhere.
+Not sure which one? Ask what you want from the skill: do a task (`workflow`), find out (`investigate`), produce something (`generate`), judge something (`review`), know something (`knowledge`) or hold a rule (`guardrail`).
 
-To use a template as it is, without the constructor: `cp -R templates/planner ~/.claude/skills/`.
+To use a template as it is, without the constructor: `cp -R templates/workflow ~/.claude/skills/`.
 
 ## Use a skill as an agent
 
-An agent file can name a skill in its `skills:` field, and the agent follows it. `clarifier` and `writer` cannot be loaded this way, because you start them (`disable-model-invocation: true`).
+An agent file can name a skill in its `skills:` field, and the agent follows it. `generate` cannot be loaded this way, because you start it (`disable-model-invocation: true`).
 
-`explorer`, `planner` and `reviewer` run in their own context (`context: fork`) and have read tools only. The tool list is the guard. A sentence that says "do not edit" is only a request.
+`investigate` and `review` run in their own context (`context: fork`) and have read tools only. The tool list is the guard. A sentence that says "do not edit" is only a request.
 
 ## Test
 
