@@ -38,7 +38,7 @@ button { font: inherit; }
 .toplink:hover { color: var(--text); }
 
 /* layout */
-.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 24px; max-width: 1360px; margin: 0 auto; padding: 24px 28px 40px; align-items: start; }
+.layout { display: grid; grid-template-columns: minmax(0, 52fr) 12px minmax(0, 48fr); gap: 0; column-gap: 8px; max-width: 1360px; margin: 0 auto; padding: 24px 28px 40px; align-items: start; }
 .steps { display: flex; flex-direction: column; gap: 16px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
 .step { padding: 20px; }
@@ -109,7 +109,7 @@ details.adv { margin-top: 14px; } details.adv summary { cursor: pointer; color: 
 .note.err { color: var(--err); }
 
 /* preview */
-.preview { position: sticky; top: 76px; display: flex; flex-direction: column; max-height: calc(100vh - 96px); min-height: 480px; }
+.preview { position: sticky; top: 76px; display: flex; flex-direction: column; height: var(--preview-h, calc(100vh - 96px)); min-height: 360px; overflow: hidden; }
 .tabs { display: flex; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid var(--border); }
 .tab { border: 0; background: transparent; color: var(--muted); padding: 9px 14px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; gap: 6px; align-items: center; }
 .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--primary); }
@@ -134,9 +134,33 @@ details.adv { margin-top: 14px; } details.adv summary { cursor: pointer; color: 
 footer { max-width: 1360px; margin: 0 auto; padding: 0 28px 28px; color: var(--muted); font-size: 13px; display: flex; gap: 12px; flex-wrap: wrap; }
 
 @media (max-width: 1000px) {
-  .layout { grid-template-columns: 1fr; padding: 16px; }
-  .preview { position: static; max-height: none; }
+  .layout { padding: 16px; }
+  .preview { position: static; }
   .topbar { position: static; padding: 10px 16px; flex-wrap: wrap; gap: 10px; }
   .step-sub { margin-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* movable and resizable panels */
+.layout.swapped .steps { order: 3; }
+.layout.swapped .splitter { order: 2; }
+.layout.swapped .preview { order: 1; }
+.splitter { position: relative; cursor: col-resize; touch-action: none; border-radius: 6px; align-self: stretch; }
+.splitter::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; transform: translateX(-50%); background: var(--border); border-radius: 2px; transition: background .12s, width .12s; }
+.splitter::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 36px; transform: translate(-50%, -50%); background: var(--muted); border-radius: 4px; opacity: .5; }
+.splitter:hover::before, .splitter.drag::before, .splitter:focus-visible::before { background: var(--primary); width: 3px; }
+.splitter:hover::after, .splitter.drag::after { background: var(--primary); opacity: 1; }
+.grip { height: 14px; cursor: row-resize; touch-action: none; flex: none; position: relative; border-radius: 0 0 var(--radius) var(--radius); }
+.grip::after { content: ""; position: absolute; left: 50%; top: 5px; width: 44px; height: 4px; transform: translateX(-50%); background: var(--muted); border-radius: 4px; opacity: .5; }
+.grip:hover::after, .grip.drag::after, .grip:focus-visible::after { background: var(--primary); opacity: 1; }
+body.dragging { user-select: none; cursor: col-resize; }
+body.dragging.row { cursor: row-resize; }
+body.dragging iframe, body.dragging textarea { pointer-events: none; }
+.iconbtn { background: transparent; border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+.iconbtn:hover { color: var(--text); border-color: color-mix(in srgb, var(--primary) 40%, var(--border)); }
+@media (max-width: 1000px) {
+  .layout { display: flex; flex-direction: column; gap: 16px; }
+  .layout.swapped .steps, .layout.swapped .preview { order: 0; }
+  .splitter, .grip, #swap, #reset-layout { display: none; }
+  .preview { height: auto !important; min-height: 0; }
+}

@@ -17,6 +17,8 @@
     <button role="tab" id="tab-agent" aria-selected="false">Agent</button>
   </div>
   <div class="spacer"></div>
+  <button class="toplink iconbtn" id="swap" type="button" title="Put the preview on the other side">⇄ Swap sides</button>
+  <button class="toplink iconbtn" id="reset-layout" type="button" title="Back to the default layout">Reset layout</button>
   <span class="pill" id="status" role="status" aria-live="polite">Pick a template</span>
   <a class="toplink" href="https://github.com/YaroslavMatushevych/claude-skill-templates" target="_blank" rel="noopener">GitHub</a>
 </header>
@@ -129,7 +131,9 @@
     </section>
   </div>
 
-  <aside class="card preview" aria-label="Preview">
+  <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Resize the two panels" aria-valuemin="30" aria-valuemax="70" aria-valuenow="52" tabindex="0" title="Drag to resize. Double-click to reset."></div>
+
+  <aside class="card preview" id="preview" aria-label="Preview">
     <div class="tabs" role="tablist" aria-label="Preview">
       <button class="tab" role="tab" id="pt-file" aria-selected="true">Edit file</button>
       <button class="tab" role="tab" id="pt-final" aria-selected="false">Result</button>
@@ -150,6 +154,7 @@
       <button class="btn" id="copy">Copy file</button>
       <button class="btn" id="reset">Reset</button>
     </div>
+    <div class="grip" id="grip" role="separator" aria-orientation="horizontal" aria-label="Resize the height of the preview" tabindex="0" title="Drag to change the height. Double-click to reset."></div>
   </aside>
 </main>
 <footer><span>MIT License</span><span>·</span><a href="https://github.com/YaroslavMatushevych/claude-skill-templates/blob/main/LICENSE" target="_blank" rel="noopener">License</a><span>·</span><a href="https://github.com/YaroslavMatushevych/claude-skill-templates" target="_blank" rel="noopener">Source</a></footer>

@@ -415,6 +415,108 @@ function wire() {
   $("primary").onclick = () => (state.data.hosted ? doDownload() : doSave());
 }
 
+
+// ---------- movable and resizable panels (kept in this browser) ----------
+
+const LAYOUT_KEY = "skill-builder-layout";
+const layout = { left: 52, swapped: false, height: 0 };
+
+function loadLayout() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAYOUT_KEY) || "{}");
+    if (typeof saved.left === "number") layout.left = Math.min(70, Math.max(30, saved.left));
+    if (typeof saved.swapped === "boolean") layout.swapped = saved.swapped;
+    if (typeof saved.height === "number") layout.height = saved.height;
+  } catch { /* storage may be blocked */ }
+}
+function saveLayout() {
+  try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); } catch { /* ignore */ }
+}
+function applyLayout() {
+  const el = document.querySelector(".layout");
+  const [a, b] = layout.swapped ? [100 - layout.left, layout.left] : [layout.left, 100 - layout.left];
+  // The splitter always sits between the two panels. When swapped, the preview is on the left and gets the left share.
+  el.style.gridTemplateColumns = layout.swapped ? `minmax(0, ${layout.left}fr) 12px minmax(0, ${100 - layout.left}fr)` : `minmax(0, ${a}fr) 12px minmax(0, ${b}fr)`;
+  el.classList.toggle("swapped", layout.swapped);
+  $("splitter").setAttribute("aria-valuenow", String(Math.round(layout.left)));
+  $("preview").style.setProperty("--preview-h", layout.height ? `${layout.height}px` : "calc(100vh - 96px)");
+}
+function initLayout() {
+  loadLayout();
+  applyLayout();
+  const splitter = $("splitter");
+  const grip = $("grip");
+
+  // Drag the divider. The left share is the share of the panel on the left side, whichever panel that is.
+  splitter.addEventListener("pointerdown", (e) => {
+    splitter.setPointerCapture(e.pointerId);
+    splitter.classList.add("drag");
+    document.body.classList.add("dragging");
+    const box = document.querySelector(".layout").getBoundingClientRect();
+    const move = (ev) => {
+      layout.left = Math.min(70, Math.max(30, ((ev.clientX - box.left) / box.width) * 100));
+      applyLayout();
+    };
+    const up = () => {
+      splitter.classList.remove("drag");
+      document.body.classList.remove("dragging");
+      splitter.removeEventListener("pointermove", move);
+      splitter.removeEventListener("pointerup", up);
+      splitter.removeEventListener("pointercancel", up);
+      saveLayout();
+    };
+    splitter.addEventListener("pointermove", move);
+    splitter.addEventListener("pointerup", up);
+    splitter.addEventListener("pointercancel", up);
+  });
+  splitter.addEventListener("keydown", (e) => {
+    const step = e.shiftKey ? 8 : 2;
+    if (e.key === "ArrowLeft") layout.left = Math.max(30, layout.left - step);
+    else if (e.key === "ArrowRight") layout.left = Math.min(70, layout.left + step);
+    else if (e.key === "Home") layout.left = 52;
+    else return;
+    e.preventDefault(); applyLayout(); saveLayout();
+  });
+  splitter.addEventListener("dblclick", () => { layout.left = 52; applyLayout(); saveLayout(); });
+
+  // Drag the bottom edge of the preview to change its height. This also resizes the Edit file box.
+  grip.addEventListener("pointerdown", (e) => {
+    grip.setPointerCapture(e.pointerId);
+    grip.classList.add("drag");
+    document.body.classList.add("dragging", "row");
+    const startY = e.clientY;
+    const startH = $("preview").getBoundingClientRect().height;
+    const move = (ev) => {
+      layout.height = Math.round(Math.min(2400, Math.max(360, startH + (ev.clientY - startY))));
+      applyLayout();
+    };
+    const up = () => {
+      grip.classList.remove("drag");
+      document.body.classList.remove("dragging", "row");
+      grip.removeEventListener("pointermove", move);
+      grip.removeEventListener("pointerup", up);
+      grip.removeEventListener("pointercancel", up);
+      saveLayout();
+    };
+    grip.addEventListener("pointermove", move);
+    grip.addEventListener("pointerup", up);
+    grip.addEventListener("pointercancel", up);
+  });
+  grip.addEventListener("keydown", (e) => {
+    const cur = layout.height || $("preview").getBoundingClientRect().height;
+    const step = e.shiftKey ? 160 : 40;
+    if (e.key === "ArrowDown") layout.height = Math.min(2400, cur + step);
+    else if (e.key === "ArrowUp") layout.height = Math.max(360, cur - step);
+    else if (e.key === "Home") layout.height = 0;
+    else return;
+    e.preventDefault(); applyLayout(); saveLayout();
+  });
+  grip.addEventListener("dblclick", () => { layout.height = 0; applyLayout(); saveLayout(); });
+
+  $("swap").onclick = () => { layout.swapped = !layout.swapped; layout.left = 100 - layout.left; applyLayout(); saveLayout(); };
+  $("reset-layout").onclick = () => { layout.left = 52; layout.swapped = false; layout.height = 0; applyLayout(); saveLayout(); toast("Layout reset."); };
+}
+
 (async () => {
   try {
     state.data = await api("/api/templates");
@@ -427,5 +529,6 @@ function wire() {
   $("primary").textContent = state.data.hosted ? "Download .zip" : "Save to project";
   $("download").hidden = !!state.data.hosted;
   wire();
+  initLayout();
   setKind("skill");
 })();

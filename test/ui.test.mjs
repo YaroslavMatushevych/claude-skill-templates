@@ -35,7 +35,11 @@ const post = (path, body, origin = BASE) =>
   fetch(`${BASE}${path}`, { method: "POST", headers: { "content-type": "application/json", origin }, body: JSON.stringify(body) });
 
 test("serves the page and the template lists", async () => {
-  assert.match(await (await fetch(BASE)).text(), /Skill builder/);
+  const page = await (await fetch(BASE)).text();
+  assert.match(page, /Skill builder/);
+  for (const id of ["splitter", "grip", "swap", "reset-layout"]) assert.match(page, new RegExp(`id="${id}"`), id);
+  const app = await (await fetch(`${BASE}/app.js`)).text();
+  assert.match(app, /skill-builder-layout/);
   for (const f of ["app.js", "style.css", "zip.js", "favicon.svg"]) assert.equal((await fetch(`${BASE}/${f}`)).status, 200, f);
   assert.equal((await fetch(`${BASE}/scripts/lib.mjs`)).status, 404);
   const t = await (await fetch(`${BASE}/api/templates`)).json();

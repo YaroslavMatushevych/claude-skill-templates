@@ -84,6 +84,8 @@ Not in the form, so edit the file: `hooks`, `shell`, `initialPrompt`, `omitClaud
 3. For a skill, add references and scripts. A reference is pasted text, a URL, or a file from your project. You must say when Claude should read it. 
 4. The checks update as you work. Save to your project, or download a zip, when there are no errors.
 
+The panels are movable. Drag the divider between the form and the preview to change their widths. Drag the handle at the bottom of the preview to change the height of the Edit file box. **Swap sides** puts the preview on the other side. Arrow keys work on both handles, a double-click resets one, and **Reset layout** resets all. The browser remembers your layout.
+
 The server listens on `127.0.0.1` only, refuses requests from other sites, and writes only inside the project folder.
 
 ## Deploy the UI
