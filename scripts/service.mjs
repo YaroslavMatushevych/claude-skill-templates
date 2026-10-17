@@ -22,8 +22,9 @@ function normalize(b) {
   if (!b || typeof b !== "object") bad("The request is not valid.");
   if (!["skill", "agent"].includes(b.kind)) bad("Choose a skill or an agent.");
   if (!str(b.template)) bad("Pick a template.");
-  for (const key of ["name", "description", "outDir", "model", "text"]) if (b[key] !== undefined && typeof b[key] !== "string") bad(`\`${key}\` must be text.`);
-  for (const key of ["references", "scripts", "tools", "skills", "disallowed"]) if (b[key] !== undefined && !Array.isArray(b[key])) bad(`\`${key}\` must be a list.`);
+  for (const key of ["name", "description", "outDir", "text"]) if (b[key] !== undefined && typeof b[key] !== "string") bad(`\`${key}\` must be text.`);
+  for (const key of ["references", "scripts", "skills"]) if (b[key] !== undefined && !Array.isArray(b[key])) bad(`\`${key}\` must be a list.`);
+  if (b.fields !== undefined && (typeof b.fields !== "object" || b.fields === null || Array.isArray(b.fields))) bad("`fields` must be a map.");
   if ((b.references ?? []).length > LIMITS.references) bad(`Use at most ${LIMITS.references} references.`);
   if ((b.scripts ?? []).length > LIMITS.scripts) bad(`Use at most ${LIMITS.scripts} scripts.`);
   const big = [...(b.references ?? []), ...(b.scripts ?? [])].find((x) => typeof x?.content === "string" && x.content.length > LIMITS.file);
@@ -45,14 +46,10 @@ export function createService({ hosted = false, project = null } = {}) {
   const renderDraft = (b) => {
     normalize(b);
     const name = str(b.name) ?? "my-skill";
+    const fields = b.fields ?? {};
     return b.kind === "agent"
-      ? renderAgent({ template: b.template, name, description: str(b.description), skills: b.skills ?? [], model: str(b.model), tools: b.tools?.length ? b.tools : undefined, maxTurns: str(b.maxTurns) })
-      : renderSkill({
-          template: b.template, name, description: str(b.description),
-          userStarted: typeof b.userStarted === "boolean" ? b.userStarted : undefined,
-          model: str(b.model), fork: typeof b.fork === "boolean" ? b.fork : undefined,
-          disallowed: Array.isArray(b.disallowed) ? b.disallowed : undefined,
-        });
+      ? renderAgent({ template: b.template, name, description: str(b.description), skills: b.skills ?? [], fields })
+      : renderSkill({ template: b.template, name, description: str(b.description), fields });
   };
 
   // Build in a temp folder to check, or in the project folder to save.

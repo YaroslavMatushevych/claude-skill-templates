@@ -69,7 +69,7 @@ test("save writes the skill with a reference and a pointer, and the check passes
 });
 
 test("save writes an agent file", async () => {
-  const r = await post("/api/save", { kind: "agent", template: "reviewer", name: "diff-reviewer", model: "opus" });
+  const r = await post("/api/save", { kind: "agent", template: "reviewer", name: "diff-reviewer", fields: { model: "opus" } });
   const body = await r.json();
   assert.equal(r.status, 200, JSON.stringify(body));
   assert.match(readFileSync(join(project, ".claude/agents/diff-reviewer.md"), "utf8"), /^model: opus$/m);

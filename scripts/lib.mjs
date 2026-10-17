@@ -18,10 +18,29 @@ const MAX_NAME = 64;
 const MAX_DESCRIPTION = 1024;
 const MAX_BODY_LINES = 500;
 const TOC_AFTER_LINES = 100;
-export const TOOLS = ["Read", "Grep", "Glob", "Edit", "Write", "Bash", "WebFetch", "WebSearch"];
-const KNOWN_TOOLS = new Set([...TOOLS, "NotebookEdit", "TodoWrite", "Task"]);
+export const TOOLS = ["Read", "Grep", "Glob", "Edit", "Write", "NotebookEdit", "Bash", "PowerShell", "WebFetch", "WebSearch", "TodoWrite", "LSP", "Agent", "Skill"];
+const KNOWN_TOOLS = new Set([...TOOLS, "Task", "ToolSearch", "Monitor", "SendMessage", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode", "ListAgents", "Workflow"]);
 const WRITE_TOOLS = ["Edit", "Write", "NotebookEdit"];
-const MODELS = new Set(["haiku", "sonnet", "opus", "inherit"]);
+const SHELL_TOOLS = ["Bash", "PowerShell"];
+export const MODELS = ["haiku", "sonnet", "opus", "fable", "inherit"];
+export const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+export const PERMISSION_MODES = ["default", "acceptEdits", "auto", "dontAsk", "plan", "bypassPermissions"];
+export const MEMORY_SCOPES = ["user", "project", "local"];
+export const COLORS = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan"];
+const isModel = (m) => MODELS.includes(m) || /^claude-[a-z0-9.-]+$/.test(m);
+const isTool = (t) => KNOWN_TOOLS.has(t.replace(/\(.*\)$/, "")) || /^mcp__[A-Za-z0-9_-]+__(\*|[A-Za-z0-9_-]+)$/.test(t) || /^mcp__[A-Za-z0-9_-]+$/.test(t);
+
+// The frontmatter fields the builder can set. Types: text, bool, model, effort, toollist (YAML list), commas, list (YAML list).
+export const SKILL_FIELDS = {
+  when_to_use: "text", "argument-hint": "text", arguments: "list", "disable-model-invocation": "bool", "user-invocable": "hide",
+  "allowed-tools": "toollist", "disallowed-tools": "toollist", model: "model", effort: "effort", context: "fork", agent: "name", paths: "list",
+};
+export const AGENT_FIELDS = {
+  tools: "commas", disallowedTools: "commas", model: "model", permissionMode: "permission", maxTurns: "int", mcpServers: "list",
+  memory: "memory", background: "bool", effort: "effort", isolation: "worktree", color: "color",
+};
+const MAX_MODEL = 80;
+const MAX_FIELD = 1000;
 
 // ---------- frontmatter ----------
 
@@ -86,7 +105,9 @@ export function templateInfo(kind, name) {
   const instructionsPath = join(dir, name, "INSTRUCTIONS.md");
   const instructions = existsSync(instructionsPath) ? readFileSync(instructionsPath, "utf8") : "";
   const { fields, lists } = parseFields(splitFrontmatter(text).raw);
+  const frontmatter = { ...fields, ...lists };
   return {
+    frontmatter,
     kind,
     name,
     description: fields.description ?? "",
@@ -120,7 +141,62 @@ function checkDescription(description) {
   if (/\n/.test(description)) bad("Write the description on one line.");
 }
 
-export function renderSkill({ template, name, description, userStarted, model, fork, disallowed }) {
+function oneLine(v, key) {
+  const t = String(v).replace(/\s+/g, " ").trim();
+  if (t.length > MAX_FIELD) bad(`\`${key}\` is too long.`);
+  return t;
+}
+
+// Set frontmatter fields from a map. Empty, false or null removes the field. Every value is checked.
+export function applyFields(text, schema, fields = {}) {
+  for (const [key, raw] of Object.entries(fields)) {
+    const type = schema[key];
+    if (!type) bad(`\`${key}\` is not a field the builder can set.`);
+    const empty = raw === null || raw === undefined || raw === "" || raw === false || (Array.isArray(raw) && raw.length === 0);
+    if (empty) { text = setField(text, key, null); continue; }
+    let value;
+    if (type === "text") value = oneLine(raw, key);
+    else if (type === "bool") value = "true";
+    else if (type === "hide") value = "false";
+    else if (type === "model") {
+      value = oneLine(raw, key);
+      if (!isModel(value) || value.length > MAX_MODEL) bad(`\`${key}\` must be ${MODELS.join(", ")} or a full model ID such as claude-opus-5-5.`);
+    } else if (type === "effort") {
+      value = String(raw);
+      if (!EFFORTS.includes(value)) bad(`\`effort\` must be one of: ${EFFORTS.join(", ")}.`);
+    } else if (type === "permission") {
+      value = String(raw);
+      if (!PERMISSION_MODES.includes(value)) bad(`\`permissionMode\` must be one of: ${PERMISSION_MODES.join(", ")}.`);
+    } else if (type === "memory") {
+      value = String(raw);
+      if (!MEMORY_SCOPES.includes(value)) bad(`\`memory\` must be one of: ${MEMORY_SCOPES.join(", ")}.`);
+    } else if (type === "color") {
+      value = String(raw);
+      if (!COLORS.includes(value)) bad(`\`color\` must be one of: ${COLORS.join(", ")}.`);
+    } else if (type === "worktree") {
+      if (raw !== "worktree" && raw !== true) bad("`isolation` can only be `worktree`.");
+      value = "worktree";
+    } else if (type === "fork") {
+      if (raw !== "fork" && raw !== true) bad("`context` can only be `fork`.");
+      value = "fork";
+    } else if (type === "int") {
+      value = String(raw);
+      if (!/^\d+$/.test(value) || Number(value) < 1) bad(`\`${key}\` must be a whole number above 0.`);
+    } else if (type === "name") {
+      value = String(raw);
+      if (!/^[A-Za-z0-9][A-Za-z0-9 _.-]{0,63}$/.test(value)) bad(`\`${key}\` is not a valid name.`);
+    } else if (type === "toollist" || type === "commas" || type === "list") {
+      const items = (Array.isArray(raw) ? raw : String(raw).split(",")).map((x) => oneLine(x, key)).filter(Boolean);
+      if (type !== "list") for (const t of items) if (!isTool(t)) bad(`\`${t}\` is not a tool name that Claude Code knows. Use a name such as Read, or mcp__server__*.`);
+      if (items.length > 40) bad(`\`${key}\` has too many entries.`);
+      value = type === "commas" ? items.join(", ") : items;
+    }
+    text = setField(text, key, value);
+  }
+  return text;
+}
+
+export function renderSkill({ template, name, description, fields }) {
   checkName(name);
   let text = templateInfo("skill", template).text;
   text = setField(text, "name", name);
@@ -128,20 +204,10 @@ export function renderSkill({ template, name, description, userStarted, model, f
     checkDescription(description);
     text = setField(text, "description", description);
   }
-  if (typeof userStarted === "boolean") text = setField(text, "disable-model-invocation", userStarted ? "true" : null);
-  if (model) {
-    if (!MODELS.has(model)) bad(`The model must be one of: ${[...MODELS].join(", ")}.`);
-    text = setField(text, "model", model);
-  }
-  if (typeof fork === "boolean") text = setField(text, "context", fork ? "fork" : null);
-  if (Array.isArray(disallowed)) {
-    for (const t of disallowed) if (!KNOWN_TOOLS.has(t)) bad(`\`${t}\` is not a tool name that Claude Code knows.`);
-    text = setField(text, "disallowed-tools", disallowed.length ? disallowed.join(" ") : null);
-  }
-  return text;
+  return applyFields(text, SKILL_FIELDS, fields);
 }
 
-export function renderAgent({ template, name, description, skills = [], model, tools, maxTurns }) {
+export function renderAgent({ template, name, description, skills = [], fields = {}, model, tools, maxTurns }) {
   checkName(name);
   let text = templateInfo("agent", template).text;
   text = setField(text, "name", name);
@@ -149,15 +215,9 @@ export function renderAgent({ template, name, description, skills = [], model, t
     checkDescription(description);
     text = setField(text, "description", description);
   }
-  if (tools) text = setField(text, "tools", Array.isArray(tools) ? tools.join(", ") : tools);
-  if (model) {
-    if (!MODELS.has(model)) bad(`The model must be one of: ${[...MODELS].join(", ")}.`);
-    text = setField(text, "model", model);
-  }
-  if (maxTurns) {
-    if (!/^\d+$/.test(String(maxTurns))) bad("maxTurns must be a number.");
-    text = setField(text, "maxTurns", String(maxTurns));
-  }
+  // The command line passes model, tools and maxTurns directly. The UI passes a fields map.
+  const all = { ...(tools ? { tools } : {}), ...(model ? { model } : {}), ...(maxTurns ? { maxTurns: String(maxTurns) } : {}), ...fields };
+  text = applyFields(text, AGENT_FIELDS, all);
   if (skills.length) {
     for (const s of skills) if (!NAME_RE.test(s)) bad(`\`${s}\` is not a valid skill name.`);
     text = setField(text, "skills", skills);
@@ -307,14 +367,42 @@ export function addScript({ skill, source, content, as, read, force }) {
 
 // ---------- checks ----------
 
+const SKILL_KNOWN = new Set(["name", "description", ...Object.keys(SKILL_FIELDS), "hooks", "shell", "background", "metadata", "license", "compatibility"]);
+const AGENT_KNOWN = new Set(["name", "description", "skills", ...Object.keys(AGENT_FIELDS), "hooks", "omitClaudeMd", "autoCompactWindow", "initialPrompt", "experimental"]);
+
+// Checks that apply to the frontmatter of both skills and agents.
+function checkFrontmatter(fields, lists, known, errors, warnings) {
+  for (const key of Object.keys({ ...fields, ...lists })) {
+    if (!known.has(key)) warnings.push(`\`${key}\` is not a field Claude Code knows, so it is ignored. Check the spelling.`);
+  }
+  const oneOf = (key, allowed) => {
+    if (fields[key] && !allowed.includes(fields[key])) errors.push(`\`${key}: ${fields[key]}\` is not valid. Use one of: ${allowed.join(", ")}.`);
+  };
+  oneOf("effort", EFFORTS);
+  oneOf("permissionMode", PERMISSION_MODES);
+  oneOf("memory", MEMORY_SCOPES);
+  oneOf("color", COLORS);
+  oneOf("isolation", ["worktree"]);
+  oneOf("context", ["fork"]);
+  if (fields.model && !isModel(fields.model)) errors.push(`\`model: ${fields.model}\` is not ${MODELS.join(", ")} or a full model ID.`);
+  if (fields.permissionMode === "bypassPermissions") warnings.push("`permissionMode: bypassPermissions` skips every permission prompt. Use it only in a sandbox.");
+  if (fields["disable-model-invocation"] === "true" && fields["user-invocable"] === "false") errors.push("Nobody can start this skill: `disable-model-invocation: true` stops Claude, and `user-invocable: false` stops you.");
+  if (fields.agent && fields.context !== "fork") warnings.push("`agent` only works together with `context: fork`.");
+  for (const key of ["tools", "disallowedTools", "allowed-tools", "disallowed-tools"]) {
+    const items = [...(lists[key] ?? []), ...(fields[key] ? fields[key].split(key.endsWith("Tools") || key === "tools" ? "," : /\s+/) : [])].map((x) => x.trim()).filter(Boolean);
+    for (const t of items) if (!isTool(t)) warnings.push(`\`${t}\` in \`${key}\` is not a tool name that Claude Code knows.`);
+  }
+}
+
 export function checkSkill(folder) {
   const errors = [];
   const warnings = [];
   const parsed = splitFrontmatter(readFileSync(join(folder, "SKILL.md"), "utf8"));
   if (parsed.error) return { errors: [parsed.error], warnings };
-  const { fields } = parseFields(parsed.raw);
+  const { fields, lists } = parseFields(parsed.raw);
   const { body } = parsed;
   const isTemplate = folder.split("/").includes("templates");
+  checkFrontmatter(fields, lists, SKILL_KNOWN, errors, warnings);
 
   const name = fields.name ?? "";
   if (!name) errors.push("Missing `name`.");
@@ -355,7 +443,7 @@ export function checkSkill(folder) {
       }
     }
   }
-  if (fields["allowed-tools"] && /read[- ]only|does not edit|without editing|cannot edit/i.test(`${description} ${body}`)) {
+  if ((fields["allowed-tools"] || lists["allowed-tools"]) && /read[- ]only|does not edit|without editing|cannot edit/i.test(`${description} ${body}`)) {
     warnings.push("`allowed-tools` only pre-approves tools. It does not stop Claude from using others. To block edits, use `disallowed-tools: Write Edit NotebookEdit`.");
   }
   const caps = (body.match(/\b(ALWAYS|NEVER|MUST)\b/g) ?? []).length;
@@ -371,6 +459,7 @@ export function checkAgent(file) {
   if (parsed.error) return { errors: [parsed.error], warnings };
   const { fields, lists } = parseFields(parsed.raw);
   const { body } = parsed;
+  checkFrontmatter(fields, lists, AGENT_KNOWN, errors, warnings);
 
   const name = fields.name ?? "";
   if (!name) errors.push("Missing `name`.");
@@ -392,9 +481,11 @@ export function checkAgent(file) {
     if (!KNOWN_TOOLS.has(base) && !base.startsWith("mcp__")) warnings.push(`\`${t}\` is not a tool name that Claude Code knows.`);
   }
   if (/read[- ]only|cannot edit|does not edit/i.test(description) && tools.some((t) => WRITE_TOOLS.includes(t))) {
-    errors.push("The description says read-only, but the tools include Edit or Write. The tool list is the guard. Remove them.");
+    errors.push("The description says read-only, but the tools include an edit tool (Edit, Write or NotebookEdit). The tool list is the guard. Remove it.");
   }
-  if (fields.model && !MODELS.has(fields.model) && !/^claude-/.test(fields.model)) warnings.push(`\`model: ${fields.model}\` is not haiku, sonnet, opus or inherit.`);
+  if (/read[- ]only|cannot edit|does not edit/i.test(description) && tools.some((t) => SHELL_TOOLS.includes(t))) {
+    warnings.push("The description says read-only, but the tools include a shell (Bash or PowerShell). A shell can write files. Remove it for a hard guarantee.");
+  }
   if (fields.maxTurns && !/^\d+$/.test(fields.maxTurns)) errors.push("`maxTurns` must be a number.");
   if (!fields.maxTurns) warnings.push("No `maxTurns`. A stuck agent keeps spending.");
   for (const s of lists.skills ?? []) if (!NAME_RE.test(s)) errors.push(`\`${s}\` in \`skills\` is not a valid skill name.`);

@@ -55,6 +55,26 @@ A common chain: `explorer` finds the code, `planner` writes a plan, you approve 
 
 Every template has an `INSTRUCTIONS.md` with **Change** (what to edit for your project), **Keep** (what makes it work) and **Test** (how to check it).
 
+## What you can set
+
+The builder writes the real frontmatter fields from the Claude Code docs. It checks every value and warns about a field name it does not know, because Claude Code ignores a misspelled field without an error.
+
+**Skill.** Who can start it, as three modes:
+
+| Mode | You can type `/name` | Claude loads it on its own | Field |
+|---|---|---|---|
+| You or Claude | yes | yes | none (the default) |
+| Only you | yes | no | `disable-model-invocation: true` |
+| Only Claude | no, it is hidden from the menu | yes | `user-invocable: false` |
+
+Also: `model`, `effort`, `context: fork` with `agent`, `allowed-tools` (no permission prompt for these), `disallowed-tools` (blocked), `when_to_use`, `argument-hint`, `arguments`, `paths`.
+
+**Agent.** `tools`, `disallowedTools`, `model`, `maxTurns`, `effort`, `permissionMode`, `memory`, `isolation: worktree`, `background`, `color`, `mcpServers`, and `skills`.
+
+**Tools** you can pick: Read, Grep, Glob, Edit, Write, NotebookEdit, Bash, PowerShell, WebFetch, WebSearch, TodoWrite, LSP, Agent, Skill, and any other name or MCP tool (`mcp__server__*`). **Models:** haiku, sonnet, opus, fable, inherit, or a full model ID.
+
+Not in the form, so edit the file: `hooks`, `shell`, `initialPrompt`, `omitClaudeMd`, `autoCompactWindow`, `metadata`, `license`, `compatibility`.
+
 ## Build with the UI
 
 `node scripts/ui.mjs` (add `--dir <project>` to build for another folder, `--port <n>` to change the port).

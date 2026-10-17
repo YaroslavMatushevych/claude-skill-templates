@@ -1,9 +1,21 @@
 import { zip } from "/zip.js";
 
 const $ = (id) => document.getElementById(id);
-const state = { agentSkills: new Set(), kind: "skill", data: null, template: null, dirty: false, refs: [], scripts: [], timer: null, seq: 0, last: null, tab: "file" };
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const WRITE_TOOLS = ["Edit", "Write", "NotebookEdit", "Bash"];
+const TOOL_LIST = ["Read", "Grep", "Glob", "Edit", "Write", "NotebookEdit", "Bash", "PowerShell", "WebFetch", "WebSearch", "TodoWrite", "LSP", "Agent", "Skill"];
+
+// Who can start a skill. Both fields are in the docs: disable-model-invocation and user-invocable.
+const STARTERS = {
+  both: "You can type /name, and Claude loads it on its own when the description fits.",
+  you: "You type /name. Claude never loads it on its own. Use it for work with side effects.",
+  claude: "Hidden from the / menu. Claude loads it when the description fits. Use it for background knowledge.",
+};
+
+const state = {
+  kind: "skill", data: null, template: null, dirty: false, refs: [], scripts: [], timer: null, seq: 0, renderSeq: 0, last: null,
+  autoName: "", autoDesc: "", starter: "both",
+  sets: { allowed: new Set(), blocked: new Set(), tools: new Set(), removed: new Set(), skills: new Set() },
+};
 
 async function api(path, body) {
   const res = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : undefined);
@@ -14,41 +26,96 @@ async function api(path, body) {
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 // Small, safe inline markdown for the template notes: `code` and **bold**. The text is escaped first.
 const md = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-const BLOCKABLE = ["Write", "Edit", "NotebookEdit", "Bash", "WebFetch", "WebSearch"];
 const defaultDir = () => (state.kind === "skill" ? ".claude/skills" : ".claude/agents");
+const list = (v) => (Array.isArray(v) ? v : String(v ?? "").split(/[,\s]+/)).map((x) => x.trim()).filter(Boolean);
+const csv = (v) => String(v ?? "").split(",").map((x) => x.trim()).filter(Boolean);
 
 function toast(message) {
   const t = $("toast");
   t.textContent = message;
   t.classList.add("show");
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => t.classList.remove("show"), 3200);
+  toast.timer = setTimeout(() => t.classList.remove("show"), 3600);
+}
+
+// ---------- model field: a list, plus "Other" for a full model ID ----------
+
+function modelValue(prefix) {
+  const v = $(`${prefix}model`).value;
+  return v === "__other" ? $(`${prefix}model-other`).value.trim() : v;
+}
+function setModel(prefix, value) {
+  const select = $(`${prefix}model`);
+  const known = [...select.options].some((o) => o.value === value);
+  select.value = known ? value : value ? "__other" : "";
+  $(`${prefix}model-other`).hidden = select.value !== "__other";
+  $(`${prefix}model-other`).value = known ? "" : value;
+}
+
+// ---------- tool pickers: chips for the known tools, plus any name or rule you add ----------
+
+const PICKERS = [
+  { set: "allowed", box: "allowed", input: "allowed-custom", add: "allowed-add", kind: "skill", example: "Bash(git diff *)" },
+  { set: "blocked", box: "blocked", input: "blocked-custom", add: "blocked-add", kind: "skill", example: "WebFetch" },
+  { set: "tools", box: "tools", input: "tools-custom", add: "tools-add", kind: "agent", example: "mcp__github__*" },
+  { set: "removed", box: "removed", input: "removed-custom", add: "removed-add", kind: "agent", example: "mcp__github__*" },
+];
+function renderPicker(p) {
+  const set = state.sets[p.set];
+  const names = [...TOOL_LIST, ...[...set].filter((n) => !TOOL_LIST.includes(n))];
+  $(p.box).innerHTML = names.map((t) => `<label><input type="checkbox" value="${esc(t)}"${set.has(t) ? " checked" : ""}>${esc(t)}</label>`).join("");
 }
 
 // ---------- payloads ----------
 
+function fieldsPayload() {
+  if (state.kind === "skill") {
+    return {
+      "disable-model-invocation": state.starter === "you",
+      "user-invocable": state.starter === "claude",
+      "allowed-tools": [...state.sets.allowed],
+      "disallowed-tools": [...state.sets.blocked],
+      model: modelValue("s"),
+      effort: $("seffort").value,
+      context: $("fork").checked,
+      agent: $("fork").checked ? $("agent-type").value.trim() : "",
+      when_to_use: $("when_to_use").value,
+      "argument-hint": $("hint").value,
+      arguments: list($("arguments").value),
+      paths: csv($("paths").value),
+    };
+  }
+  return {
+    tools: [...state.sets.tools],
+    disallowedTools: [...state.sets.removed],
+    model: modelValue("a"),
+    maxTurns: $("maxTurns").value.trim(),
+    effort: $("aeffort").value,
+    permissionMode: $("permission").value,
+    memory: $("memory").value,
+    background: $("background").checked,
+    isolation: $("isolation").checked,
+    color: $("color").value,
+    mcpServers: csv($("mcp").value),
+  };
+}
+// The template always renders. A name or description that is not valid yet is shown in the file as you typed it, and the Checks tab says what is wrong.
+function renderPayload() {
+  const name = $("name").value.trim();
+  const description = $("description").value.replace(/\s+/g, " ").trim();
+  const p = {
+    kind: state.kind, template: state.template, fields: fieldsPayload(),
+    name: NAME_RE.test(name) && name.length <= 64 ? name : "my-skill",
+    description: description.length <= 1024 ? description : "",
+  };
+  if (state.kind === "agent") p.skills = [...state.sets.skills];
+  return p;
+}
 function checkPayload() {
-  const p = { kind: state.kind, template: state.template, name: $("name").value.trim(), description: $("description").value.trim(), outDir: $("outDir").value.trim(), text: $("draft").value };
+  const p = { ...renderPayload(), name: $("name").value.trim(), outDir: $("outDir").value.trim(), text: $("draft").value };
   if (state.kind === "skill") {
     p.references = state.refs.map(({ kind, ...r }) => (r.content !== undefined ? { content: r.content, as: r.as, when: r.when } : r));
     p.scripts = state.scripts;
-  }
-  return p;
-}
-function renderPayload() {
-  const p = checkPayload();
-  delete p.text; delete p.references; delete p.scripts;
-  if (state.kind === "skill") {
-    p.userStarted = $("start-manual").getAttribute("aria-checked") === "true";
-    p.model = $("smodel").value;
-    p.fork = $("fork").checked;
-    p.disallowed = [...document.querySelectorAll("#blocked input:checked")].map((i) => i.value);
-  }
-  if (state.kind === "agent") {
-    p.model = $("model").value;
-    p.maxTurns = $("maxTurns").value;
-    p.tools = [...document.querySelectorAll("#tools input:checked")].map((i) => i.value);
-    p.skills = [...state.agentSkills];
   }
   return p;
 }
@@ -71,6 +138,14 @@ function setKind(kind) {
   pick(state.data[kind][0].name, true);
 }
 
+const toSet = (key, value) => { state.sets[key] = new Set(list(value)); };
+
+function setStarter(mode) {
+  state.starter = mode;
+  for (const m of Object.keys(STARTERS)) $(`start-${m}`).setAttribute("aria-checked", String(m === mode));
+  $("start-note").textContent = STARTERS[mode];
+}
+
 async function pick(name, force) {
   if (!force && state.dirty && !confirm("Replace your edits with the template?")) return;
   state.template = name;
@@ -78,37 +153,53 @@ async function pick(name, force) {
   const t = state.data[state.kind].find((x) => x.name === name);
   $("guide-body").innerHTML = [["Use when", t.useWhen], ["Change", t.change], ["Keep", t.keep], ["Test", t.test]]
     .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${md(v)}</dd>`).join("");
+
+  // Fill the form with what the template really has, so the form and the file agree.
+  const fm = t.frontmatter;
+  if (!$("name").value || $("name").value === state.autoName) $("name").value = state.autoName = `my-${name}`;
+  if (!$("description").value || $("description").value === state.autoDesc) $("description").value = state.autoDesc = t.description;
   if (state.kind === "skill") {
-    setStart(t.userStarted);
-    $("smodel").value = ""; $("fork").checked = t.fork;
-    const blocked = new Set(t.disallowed);
-    document.querySelectorAll("#blocked input").forEach((i) => { i.checked = blocked.has(i.value); });
+    setStarter(fm["disable-model-invocation"] === "true" ? "you" : fm["user-invocable"] === "false" ? "claude" : "both");
+    setModel("s", fm.model ?? ""); $("seffort").value = fm.effort ?? "";
+    $("fork").checked = fm.context === "fork"; $("agent-type").value = fm.agent ?? ""; $("agent-row").hidden = !$("fork").checked;
+    toSet("allowed", fm["allowed-tools"]); toSet("blocked", fm["disallowed-tools"]);
+    $("when_to_use").value = fm.when_to_use ?? ""; $("hint").value = fm["argument-hint"] ?? "";
+    $("arguments").value = list(fm.arguments).join(", "); $("paths").value = list(fm.paths).join(", ");
+    for (const p of PICKERS.filter((x) => x.kind === "skill")) renderPicker(p);
+  } else {
+    setModel("a", fm.model ?? ""); $("maxTurns").value = fm.maxTurns ?? ""; $("aeffort").value = fm.effort ?? "";
+    $("permission").value = fm.permissionMode ?? ""; $("memory").value = fm.memory ?? ""; $("color").value = fm.color ?? "";
+    $("background").checked = fm.background === "true"; $("isolation").checked = fm.isolation === "worktree";
+    $("mcp").value = list(fm.mcpServers).join(", ");
+    toSet("tools", String(fm.tools ?? "").replace(/,/g, " ")); toSet("removed", String(fm.disallowedTools ?? "").replace(/,/g, " "));
+    state.sets.skills = new Set(fm.skills ?? []);
+    for (const p of PICKERS.filter((x) => x.kind === "agent")) renderPicker(p);
+    renderSkillPick();
   }
-  if (state.kind === "agent") {
-    $("model").value = ""; $("maxTurns").value = "";
-    state.agentSkills = new Set(t.skills); renderSkillPick();
-    const have = new Set(t.tools.split(",").map((x) => x.trim()));
-    document.querySelectorAll("#tools input").forEach((i) => { i.checked = have.has(i.value); });
-  }
-  $("description").placeholder = t.description;
   state.dirty = false;
   await regenerate(true);
 }
 
 async function regenerate(force) {
   if (state.dirty && !force) return;
+  const mine = ++state.renderSeq;
   try {
     const { text } = await api("/api/render", renderPayload());
-    $("draft").value = text; state.dirty = false;
-  } catch { /* the name may be invalid while typing */ }
+    if (mine !== state.renderSeq) return;
+    $("draft").value = text;
+    state.dirty = false;
+    patchDraft();
+  } catch (e) {
+    if (mine === state.renderSeq) toast(e.message);
+  }
   scheduleCheck();
 }
 
-// While the user edits the draft by hand, keep name and description in the draft in step with the form.
+// The name and description show in the file at once, as you type them, even when they are not valid yet.
 function patchDraft() {
   let t = $("draft").value;
   const name = $("name").value.trim();
-  const desc = $("description").value.trim().replace(/\n+/g, " ");
+  const desc = $("description").value.replace(/\s+/g, " ").trim();
   if (name) t = t.replace(/^name:.*$/m, `name: ${name}`);
   if (desc) t = t.replace(/^description:.*$/m, `description: ${desc}`);
   $("draft").value = t;
@@ -129,7 +220,7 @@ function scheduleCheck() {
     } catch (e) {
       if (mine === state.seq) show({ errors: [e.message], warnings: [], finalText: "", files: [] });
     }
-  }, 300);
+  }, 250);
 }
 
 function updateSteps() {
@@ -154,10 +245,9 @@ function show(r, hint) {
   const n = r.errors.length + r.warnings.length;
   badge.textContent = hint ? "!" : String(n);
   badge.className = `badge ${r.errors.length ? "err" : n || hint ? "warn" : "ok"}`;
-  const pill = $("status");
   const status = hint ? ["", hint] : r.errors.length ? ["err", `${r.errors.length} ${r.errors.length === 1 ? "error" : "errors"} to fix`] : r.warnings.length ? ["warn", "Ready, with advice"] : ["ok", "Ready"];
-  pill.className = `pill ${status[0]}`;
-  pill.textContent = status[1];
+  $("status").className = `pill ${status[0]}`;
+  $("status").textContent = status[1];
   $("final").textContent = r.finalText || "Nothing to show yet.";
   $("files").innerHTML = (r.files || []).map((f) => `<li>${esc(f.path)}</li>`).join("");
   const ready = !hint && r.errors.length === 0;
@@ -201,7 +291,7 @@ async function fetchRef(i) {
     r.content = `<!-- Source: ${r.url} (fetched ${new Date().toISOString().slice(0, 10)}) -->\n\n${text}`;
     r.fetched = text.split("\n").length;
     if (!r.as) r.as = `${(new URL(r.url).pathname.split("/").filter(Boolean).pop() ?? "reference").replace(/\.[a-z0-9]+$/i, "").toLowerCase().replace(/[^a-z0-9._-]+/g, "-")}.md`;
-  } catch (e) {
+  } catch {
     delete r.content;
     r.fetchError = state.data.hosted
       ? "Your browser could not download this URL. The site may block it. Paste the text instead."
@@ -210,14 +300,27 @@ async function fetchRef(i) {
   renderRefs(); scheduleCheck();
 }
 
-// ---------- actions ----------
+// ---------- skills an agent follows ----------
 
-function currentFiles() {
-  return state.last?.files ?? [];
+function skillChoices() {
+  const out = new Map();
+  for (const t of state.data.skill) out.set(t.name, { name: t.name, userStarted: t.userStarted, tag: "template" });
+  for (const p of state.data.projectSkills ?? []) out.set(p.name, { name: p.name, userStarted: p.userStarted, tag: "in your project" });
+  for (const n of state.sets.skills) if (!out.has(n)) out.set(n, { name: n, userStarted: false, tag: "custom" });
+  return [...out.values()];
+}
+function renderSkillPick() {
+  $("skillpick").innerHTML = skillChoices().map((c) => {
+    const off = c.userStarted && !state.sets.skills.has(c.name);
+    const title = c.userStarted ? "Only you start this skill, so an agent cannot load it." : c.tag;
+    return `<label title="${esc(title)}"${off ? ' style="opacity:.5"' : ""}><input type="checkbox" value="${esc(c.name)}"${state.sets.skills.has(c.name) ? " checked" : ""}${off ? " disabled" : ""}>${esc(c.name)}</label>`;
+  }).join("");
 }
 
+// ---------- actions ----------
+
 async function doDownload() {
-  const files = currentFiles();
+  const files = state.last?.files ?? [];
   if (!files.length) return;
   const blob = new Blob([zip(files)], { type: "application/zip" });
   const a = document.createElement("a");
@@ -240,67 +343,54 @@ async function doSave() {
   }
 }
 
-// The skills an agent can follow: skill templates that Claude may start, plus the skills already in the project.
-function skillChoices() {
-  const out = new Map();
-  for (const t of state.data.skill) out.set(t.name, { name: t.name, userStarted: t.userStarted, tag: "template" });
-  for (const p of state.data.projectSkills ?? []) out.set(p.name, { name: p.name, userStarted: p.userStarted, tag: "in your project" });
-  for (const n of state.agentSkills) if (!out.has(n)) out.set(n, { name: n, userStarted: false, tag: "custom" });
-  return [...out.values()];
-}
-
-function renderSkillPick() {
-  $("skillpick").innerHTML = skillChoices().map((c) => {
-    const off = c.userStarted && !state.agentSkills.has(c.name);
-    const title = c.userStarted ? "You start this skill, so an agent cannot load it." : c.tag;
-    return `<label title="${esc(title)}"${off ? ' style="opacity:.5"' : ""}><input type="checkbox" value="${esc(c.name)}"${state.agentSkills.has(c.name) ? " checked" : ""}${off ? " disabled" : ""}>${esc(c.name)}</label>`;
-  }).join("");
-}
-
-function setStart(manual) {
-  $("start-auto").setAttribute("aria-checked", String(!manual));
-  $("start-manual").setAttribute("aria-checked", String(manual));
-}
-
-function optionChanged() {
-  if (state.dirty) { toast("You edited the file by hand, so this option did not change it. Press Reset to apply it."); return; }
-  regenerate();
-}
-
 function setTab(tab) {
-  state.tab = tab;
   for (const t of ["file", "final", "checks"]) {
     $(`pt-${t}`).setAttribute("aria-selected", String(t === tab));
     $(`pane-${t}`).hidden = t !== tab;
   }
 }
 
+// An option changed. If you edited the file by hand, do not overwrite your edits.
+function optionChanged() {
+  if (state.dirty) { toast("You edited the file by hand, so this option did not change it. Press Reset to apply it."); return; }
+  regenerate();
+}
+
 function wire() {
   $("tab-skill").onclick = () => setKind("skill");
   $("tab-agent").onclick = () => setKind("agent");
   for (const t of ["file", "final", "checks"]) $(`pt-${t}`).onclick = () => setTab(t);
-  $("name").addEventListener("input", () => { state.dirty ? patchDraft() : regenerate(); scheduleCheck(); });
-  $("description").addEventListener("input", () => { state.dirty ? patchDraft() : regenerate(); scheduleCheck(); });
-  for (const id of ["model", "maxTurns", "smodel"]) $(id).addEventListener("input", optionChanged);
-  $("fork").addEventListener("change", optionChanged);
-  $("start-auto").onclick = () => { setStart(false); optionChanged(); };
-  $("start-manual").onclick = () => { setStart(true); optionChanged(); };
-  $("tools").addEventListener("change", optionChanged);
+  $("name").addEventListener("input", () => { patchDraft(); scheduleCheck(); });
+  $("description").addEventListener("input", () => { patchDraft(); scheduleCheck(); });
+  $("outDir").addEventListener("input", scheduleCheck);
+  $("draft").addEventListener("input", () => { state.dirty = true; scheduleCheck(); });
+  $("reset").onclick = () => regenerate(true);
+  for (const id of ["seffort", "aeffort", "maxTurns", "permission", "memory", "color", "mcp", "when_to_use", "hint", "arguments", "paths", "agent-type", "smodel-other", "amodel-other"]) $(id).addEventListener("input", optionChanged);
+  for (const id of ["fork", "background", "isolation"]) $(id).addEventListener("change", () => { if (id === "fork") $("agent-row").hidden = !$("fork").checked; optionChanged(); });
+  for (const prefix of ["s", "a"]) $(`${prefix}model`).addEventListener("change", () => { $(`${prefix}model-other`).hidden = $(`${prefix}model`).value !== "__other"; optionChanged(); });
+  for (const m of Object.keys(STARTERS)) $(`start-${m}`).onclick = () => { setStarter(m); optionChanged(); };
+  for (const p of PICKERS) {
+    $(p.box).addEventListener("change", (e) => { e.target.checked ? state.sets[p.set].add(e.target.value) : state.sets[p.set].delete(e.target.value); optionChanged(); });
+    const add = () => {
+      const v = $(p.input).value.trim();
+      if (!v) return;
+      state.sets[p.set].add(v); $(p.input).value = ""; renderPicker(p); optionChanged();
+    };
+    $(p.add).onclick = add;
+    $(p.input).addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+    $(p.input).placeholder = `Add another, for example ${p.example}`;
+  }
   $("skillpick").addEventListener("change", (e) => {
-    e.target.checked ? state.agentSkills.add(e.target.value) : state.agentSkills.delete(e.target.value);
+    e.target.checked ? state.sets.skills.add(e.target.value) : state.sets.skills.delete(e.target.value);
     optionChanged();
   });
   const addSkill = () => {
     const n = $("skill-custom").value.trim();
-    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(n)) { toast("Use lowercase letters, digits and hyphens, for example release-notes."); return; }
-    state.agentSkills.add(n); $("skill-custom").value = ""; renderSkillPick(); optionChanged();
+    if (!NAME_RE.test(n)) { toast("Use lowercase letters, digits and hyphens, for example release-notes."); return; }
+    state.sets.skills.add(n); $("skill-custom").value = ""; renderSkillPick(); optionChanged();
   };
   $("skill-add").onclick = addSkill;
   $("skill-custom").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } });
-  $("blocked").addEventListener("change", optionChanged);
-  $("outDir").addEventListener("input", scheduleCheck);
-  $("draft").addEventListener("input", () => { state.dirty = true; scheduleCheck(); });
-  $("reset").onclick = () => regenerate(true);
   $("add-ref-text").onclick = () => { state.refs.push({ kind: "text" }); renderRefs(); };
   $("add-ref-url").onclick = () => { state.refs.push({ kind: "url" }); renderRefs(); };
   $("add-ref-path").onclick = () => { state.refs.push({ kind: "path" }); renderRefs(); };
@@ -328,12 +418,12 @@ function wire() {
 (async () => {
   try {
     state.data = await api("/api/templates");
-  } catch (e) {
+  } catch {
     $("status").textContent = "Could not load the templates.";
     return;
   }
-  $("tools").innerHTML = state.data.tools.map((t) => `<label><input type="checkbox" value="${t}">${t}</label>`).join("");
-  $("blocked").innerHTML = BLOCKABLE.map((t) => `<label><input type="checkbox" value="${t}">${t}</label>`).join("");
+  const agents = ["Explore", "Plan", "general-purpose", ...state.data.agent.map((a) => a.name)];
+  $("agent-list").innerHTML = [...new Set(agents)].map((a) => `<option value="${esc(a)}">`).join("");
   $("primary").textContent = state.data.hosted ? "Download .zip" : "Save to project";
   $("download").hidden = !!state.data.hosted;
   wire();
