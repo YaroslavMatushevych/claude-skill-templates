@@ -13,13 +13,13 @@
 <header class="topbar">
   <div class="brand"><img src="/favicon.svg" alt="" width="28" height="28"> Skill builder</div>
   <div class="segmented" role="tablist" aria-label="What to build">
-    <button role="tab" id="tab-skill" aria-selected="true">Skill</button>
-    <button role="tab" id="tab-agent" aria-selected="false">Agent</button>
+    <button role="tab" id="tab-skill" aria-selected="true" data-tip="A skill is a procedure Claude follows in your session.">Skill</button>
+    <button role="tab" id="tab-agent" aria-selected="false" data-tip="An agent is a separate worker with its own context and its own tools.">Agent</button>
   </div>
   <div class="spacer"></div>
-  <button class="toplink iconbtn" id="swap" type="button" title="Put the preview on the other side">⇄ Swap sides</button>
-  <button class="toplink iconbtn" id="reset-layout" type="button" title="Back to the default layout">Reset layout</button>
-  <span class="pill" id="status" role="status" aria-live="polite">Pick a template</span>
+  <button class="toplink iconbtn" id="swap" type="button" title="Put the preview on the other side" data-tip="Put the preview on the other side.">⇄ Swap sides</button>
+  <button class="toplink iconbtn" id="reset-layout" type="button" title="Back to the default layout" data-tip="Back to the default layout.">Reset layout</button>
+  <span class="pill" id="status" role="status" aria-live="polite" data-tip="The result of the checks.">Pick a template</span>
   <a class="toplink" href="https://github.com/YaroslavMatushevych/claude-skill-templates" target="_blank" rel="noopener">GitHub</a>
 </header>
 
@@ -29,91 +29,91 @@
       <div class="step-head"><span class="step-num">1</span><h2 class="step-title" id="t1">Pick a template</h2></div>
       <p class="step-sub">Each one is for a different purpose. You can edit everything later.</p>
       <div class="templates" id="templates"></div>
-      <details class="guide" id="guide" open><summary>How to adapt it</summary><dl id="guide-body"></dl></details>
+      <details class="guide" id="guide" open><summary>About this template</summary><p class="guide-note">Notes for you: when to use it, what to edit, what to keep. They are not saved in the file.</p><dl id="guide-body"></dl></details>
     </section>
 
     <section class="card step" id="step-2" aria-labelledby="t2">
       <div class="step-head"><span class="step-num">2</span><h2 class="step-title" id="t2">Describe it</h2></div>
       <p class="step-sub">The description decides when Claude uses it. Say what it makes and when to use it. Edit anything. The file on the right changes as you type.</p>
-      <label class="field" for="name">Name <span class="hint">lowercase letters, digits and hyphens</span></label>
+      <label class="field" for="name" data-tip="The name of the skill or agent. For a skill it is the command you type, /name. Lowercase letters, digits and hyphens, up to 64 characters.">Name <span class="hint">lowercase letters, digits and hyphens</span></label>
       <input type="text" id="name" placeholder="release-notes" autocomplete="off" spellcheck="false" aria-describedby="name-note">
       <div class="note" id="name-note"></div>
-      <label class="field" for="description">Description <span class="hint counter" id="counter">0 / 1024</span></label>
+      <label class="field" for="description" data-tip="Claude reads this to decide when to use it. Say what it makes and when to use it. Do not list the steps.">Description <span class="hint counter" id="counter">0 / 1024</span></label>
       <textarea id="description" rows="3" placeholder="Write release notes from the git log. Use when asked for release notes."></textarea>
 
       <div id="skill-options" hidden>
-        <label class="field">Who can start it</label>
+        <label class="field" data-tip="Both settings come from the Claude Code docs. Only you sets disable-model-invocation: true. Only Claude sets user-invocable: false.">Who can start it</label>
         <div class="segmented wide" role="radiogroup" aria-label="Who can start it">
-          <button type="button" role="radio" id="start-both" aria-checked="true">You or Claude</button>
-          <button type="button" role="radio" id="start-you" aria-checked="false">Only you</button>
-          <button type="button" role="radio" id="start-claude" aria-checked="false">Only Claude</button>
+          <button type="button" role="radio" id="start-both" aria-checked="true" data-tip="You can type /name, and Claude loads it on its own when the description fits.">You or Claude</button>
+          <button type="button" role="radio" id="start-you" aria-checked="false" data-tip="You type /name. Claude never loads it on its own. Use it for work with side effects.">Only you</button>
+          <button type="button" role="radio" id="start-claude" aria-checked="false" data-tip="Hidden from the / menu. Claude loads it when the description fits. Use it for background knowledge.">Only Claude</button>
         </div>
         <div class="note" id="start-note"></div>
         <div class="row">
-          <div><label class="field" for="smodel">Model</label><select id="smodel"><option value="">Template default</option><option>haiku</option><option>sonnet</option><option>opus</option><option>fable</option><option>inherit</option><option value="__other">Other (a full model ID)</option></select>
+          <div><label class="field" for="smodel" data-tip="Which model runs it. Template default keeps the template&#x27;s choice. inherit uses your session&#x27;s model. Other takes a full model ID.">Model</label><select id="smodel"><option value="">Template default</option><option>haiku</option><option>sonnet</option><option>opus</option><option>fable</option><option>inherit</option><option value="__other">Other (a full model ID)</option></select>
             <input type="text" id="smodel-other" placeholder="claude-opus-5-5" hidden style="margin-top:6px" aria-label="Full model ID"></div>
-          <div><label class="field" for="seffort">Effort</label><select id="seffort"><option value="">Template default</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
+          <div><label class="field" for="seffort" data-tip="How hard the model thinks while this runs, from low to max. Higher costs more and takes longer.">Effort</label><select id="seffort"><option value="">Template default</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
         </div>
-        <label class="field">Context</label>
-        <label class="check"><input type="checkbox" id="fork"> Run in its own context, like a separate worker</label>
-        <div id="agent-row" hidden><label class="field" for="agent-type">Worker type <span class="hint">Explore, Plan, general-purpose, or one of your agents</span></label>
+        <label class="field" data-tip="Run the skill in a separate worker, so its work does not fill your session. The worker returns a short result.">Context</label>
+        <label class="check" data-tip="Run the skill in a separate worker, so its work does not fill your session."><input type="checkbox" id="fork"> Run in its own context, like a separate worker</label>
+        <div id="agent-row" hidden><label class="field" for="agent-type" data-tip="Which kind of worker runs a forked skill: Explore (search), Plan, general-purpose, or one of your own agents.">Worker type <span class="hint">Explore, Plan, general-purpose, or one of your agents</span></label>
           <input type="text" id="agent-type" list="agent-list" placeholder="Explore" autocomplete="off" spellcheck="false"><datalist id="agent-list"></datalist></div>
-        <label class="field">Allow without asking <span class="hint">no permission prompt for these. It does not block other tools.</span></label>
+        <label class="field" data-tip="Tools Claude can use without asking for permission while this skill runs. It only pre-approves. It does not block any other tool. You can add a rule such as Bash(git diff *).">Allow without asking <span class="hint">no permission prompt for these. It does not block other tools.</span></label>
         <div class="toolchips" id="allowed"></div>
         <div class="row" style="margin-top:8px"><input type="text" id="allowed-custom" autocomplete="off" spellcheck="false" aria-label="Add another" style="flex:3"><button type="button" class="btn small" id="allowed-add" style="flex:none;min-width:0">Add</button></div>
-        <label class="field">Block these tools <span class="hint">Claude cannot use them while this skill runs</span></label>
+        <label class="field" data-tip="Tools Claude cannot use while this skill runs (disallowed-tools). A shell can still write files, so for a hard guarantee use an agent with a plain tool list.">Block these tools <span class="hint">Claude cannot use them while this skill runs</span></label>
         <div class="toolchips" id="blocked"></div>
         <div class="row" style="margin-top:8px"><input type="text" id="blocked-custom" autocomplete="off" spellcheck="false" aria-label="Add another" style="flex:3"><button type="button" class="btn small" id="blocked-add" style="flex:none;min-width:0">Add</button></div>
         <details class="adv"><summary>More options</summary>
-          <label class="field" for="when_to_use">Extra trigger phrases <span class="hint">added to the description, for example "release notes", "changelog"</span></label>
+          <label class="field" for="when_to_use" data-tip="Extra trigger phrases. They are added to the description. The two together are cut at 1,536 characters.">Extra trigger phrases <span class="hint">added to the description, for example "release notes", "changelog"</span></label>
           <input type="text" id="when_to_use" autocomplete="off">
           <div class="row">
-            <div><label class="field" for="hint">Argument hint <span class="hint">shown in the / menu</span></label><input type="text" id="hint" placeholder="[ticket-id]" autocomplete="off"></div>
-            <div><label class="field" for="arguments">Argument names <span class="hint">comma separated</span></label><input type="text" id="arguments" placeholder="ticket, branch" autocomplete="off"></div>
+            <div><label class="field" for="hint" data-tip="Shown in the / menu after the name, for example [ticket-id].">Argument hint <span class="hint">shown in the / menu</span></label><input type="text" id="hint" placeholder="[ticket-id]" autocomplete="off"></div>
+            <div><label class="field" for="arguments" data-tip="Names for the positional arguments, so you can use them as $name inside the skill.">Argument names <span class="hint">comma separated</span></label><input type="text" id="arguments" placeholder="ticket, branch" autocomplete="off"></div>
           </div>
-          <label class="field" for="paths">Only for these files <span class="hint">globs, comma separated. Claude loads the skill only when it works with them.</span></label>
+          <label class="field" for="paths" data-tip="File patterns, such as src/**/*.ts. Claude loads the skill only when it works with matching files.">Only for these files <span class="hint">globs, comma separated. Claude loads the skill only when it works with them.</span></label>
           <input type="text" id="paths" placeholder="src/**/*.ts, tests/**" autocomplete="off" spellcheck="false">
         </details>
       </div>
 
       <div id="agent-options" hidden>
         <div class="row">
-          <div><label class="field" for="amodel">Model</label><select id="amodel"><option value="">Template default</option><option>haiku</option><option>sonnet</option><option>opus</option><option>fable</option><option>inherit</option><option value="__other">Other (a full model ID)</option></select>
+          <div><label class="field" for="amodel" data-tip="Which model runs the agent. Template default keeps the template&#x27;s choice. inherit uses your session&#x27;s model. Other takes a full model ID.">Model</label><select id="amodel"><option value="">Template default</option><option>haiku</option><option>sonnet</option><option>opus</option><option>fable</option><option>inherit</option><option value="__other">Other (a full model ID)</option></select>
             <input type="text" id="amodel-other" placeholder="claude-opus-5-5" hidden style="margin-top:6px" aria-label="Full model ID"></div>
-          <div><label class="field" for="maxTurns">Max turns</label><input type="number" id="maxTurns" min="1" placeholder="Default"></div>
-          <div><label class="field" for="aeffort">Effort</label><select id="aeffort"><option value="">Template default</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
+          <div><label class="field" for="maxTurns" data-tip="The most steps the agent takes before it stops. It limits a run that gets stuck.">Max turns</label><input type="number" id="maxTurns" min="1" placeholder="Default"></div>
+          <div><label class="field" for="aeffort" data-tip="How hard the model thinks while the agent runs, from low to max. Higher costs more and takes longer.">Effort</label><select id="aeffort"><option value="">Template default</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
         </div>
-        <label class="field">Tools <span class="hint">the agent can use only these. This is the guard.</span></label>
+        <label class="field" data-tip="The agent can use only these tools. An empty list gives it every tool. This list is the guard.">Tools <span class="hint">the agent can use only these. This is the guard.</span></label>
         <div class="toolchips" id="tools"></div>
         <div class="row" style="margin-top:8px"><input type="text" id="tools-custom" autocomplete="off" spellcheck="false" aria-label="Add another" style="flex:3"><button type="button" class="btn small" id="tools-add" style="flex:none;min-width:0">Add</button></div>
-        <label class="field">Skills it follows <span class="hint">the agent follows them as its steps</span></label>
+        <label class="field" data-tip="Skills the agent follows from the start. They must exist in .claude/skills. A skill that only you start cannot be loaded.">Skills it follows <span class="hint">the agent follows them as its steps</span></label>
         <div class="toolchips" id="skillpick"></div>
         <div class="row" style="margin-top:8px">
           <input type="text" id="skill-custom" placeholder="Another skill name, for example release-notes" autocomplete="off" spellcheck="false" aria-label="Another skill name" style="flex:3">
-          <button type="button" class="btn small" id="skill-add" style="flex:none;min-width:0">Add</button>
+          <button type="button" class="btn small" id="skill-add" style="flex:none;min-width:0" data-tip="Add a skill by name.">Add</button>
         </div>
         <div class="note" id="skill-note">A skill must exist in <code>.claude/skills</code> for the agent to follow it. Build it in the Skill tab.</div>
         <details class="adv"><summary>More options</summary>
           <div class="row">
-            <div><label class="field" for="permission">Permission mode</label>
+            <div><label class="field" for="permission" data-tip="How the agent handles permission prompts. plan is read-only planning. acceptEdits accepts file edits. bypassPermissions skips every prompt, so use it only in a sandbox.">Permission mode</label>
               <select id="permission"><option value="">Template default</option><option value="default">default: ask for risky actions</option><option value="acceptEdits">acceptEdits: accept file edits</option><option value="auto">auto: a classifier decides</option><option value="dontAsk">dontAsk: deny what is not allowed</option><option value="plan">plan: read-only planning</option><option value="bypassPermissions">bypassPermissions: skip every prompt</option></select></div>
-            <div><label class="field" for="memory">Memory <span class="hint">notes kept between sessions</span></label>
+            <div><label class="field" for="memory" data-tip="Lets the agent keep notes between sessions. user is all projects, project is this project, local is this project and not shared. Notes can go stale. Prefer none for an agent that runs alone.">Memory <span class="hint">notes kept between sessions</span></label>
               <select id="memory"><option value="">None</option><option value="user">user: all your projects</option><option value="project">project: this project</option><option value="local">local: this project, not shared</option></select></div>
-            <div><label class="field" for="color">Color</label>
+            <div><label class="field" for="color" data-tip="The color of the agent in the task list and the transcript. It changes nothing else.">Color</label>
               <select id="color"><option value="">None</option><option>red</option><option>blue</option><option>green</option><option>yellow</option><option>purple</option><option>orange</option><option>pink</option><option>cyan</option></select></div>
           </div>
           <label class="check" style="margin-top:12px"><input type="checkbox" id="isolation"> Work in a temporary git worktree, so it cannot touch your checkout</label>
           <label class="check" style="margin-top:8px"><input type="checkbox" id="background"> Always run in the background</label>
-          <label class="field" for="mcp">MCP servers <span class="hint">names, comma separated</span></label>
+          <label class="field" for="mcp" data-tip="Names of MCP servers the agent can use, for example github.">MCP servers <span class="hint">names, comma separated</span></label>
           <input type="text" id="mcp" placeholder="github, slack" autocomplete="off" spellcheck="false">
-          <label class="field">Remove these tools <span class="hint">taken away from the list above</span></label>
+          <label class="field" data-tip="Tools taken away from the agent (disallowedTools). Use it to remove a few tools without listing all the others.">Remove these tools <span class="hint">taken away from the list above</span></label>
           <div class="toolchips" id="removed"></div>
         <div class="row" style="margin-top:8px"><input type="text" id="removed-custom" autocomplete="off" spellcheck="false" aria-label="Add another" style="flex:3"><button type="button" class="btn small" id="removed-add" style="flex:none;min-width:0">Add</button></div>
         </details>
       </div>
 
       <details class="adv"><summary>Where it is saved</summary>
-        <label class="field" for="outDir">Folder <span class="hint">relative to your project</span></label>
+        <label class="field" for="outDir" data-tip="Where the file is saved, relative to your project. The default is the folder that Claude Code reads.">Folder <span class="hint">relative to your project</span></label>
         <input type="text" id="outDir" autocomplete="off" spellcheck="false">
       </details>
     </section>
@@ -123,10 +123,10 @@
       <p class="step-sub">A reference is a file Claude reads when it is needed. Say exactly when, because those words decide if Claude ever opens it.</p>
       <div id="refs"></div>
       <div class="adders">
-        <button class="btn dashed" id="add-ref-text">+ Paste text</button>
-        <button class="btn dashed" id="add-ref-url">+ From a URL</button>
-        <button class="btn dashed" id="add-ref-path">+ From a file in the project</button>
-        <button class="btn dashed" id="add-script">+ Script</button>
+        <button class="btn dashed" id="add-ref-text" data-tip="Paste text that Claude reads when it is needed.">+ Paste text</button>
+        <button class="btn dashed" id="add-ref-url" data-tip="Download a page or a file from a URL into the skill.">+ From a URL</button>
+        <button class="btn dashed" id="add-ref-path" data-tip="Copy a file from your project into the skill.">+ From a file in the project</button>
+        <button class="btn dashed" id="add-script" data-tip="Add a script the skill can run. Claude runs it and does not read it.">+ Script</button>
       </div>
     </section>
   </div>
@@ -135,9 +135,9 @@
 
   <aside class="card preview" id="preview" aria-label="Preview">
     <div class="tabs" role="tablist" aria-label="Preview">
-      <button class="tab" role="tab" id="pt-file" aria-selected="true">Edit file</button>
-      <button class="tab" role="tab" id="pt-final" aria-selected="false">Result</button>
-      <button class="tab" role="tab" id="pt-checks" aria-selected="false">Checks <span class="badge" id="check-badge">0</span></button>
+      <button class="tab" role="tab" id="pt-file" aria-selected="true" data-tip="Edit the file by hand. Your edits are kept.">Edit file</button>
+      <button class="tab" role="tab" id="pt-final" aria-selected="false" data-tip="The file as it will be saved, with the reference lines added.">Result</button>
+      <button class="tab" role="tab" id="pt-checks" aria-selected="false" data-tip="Errors stop you from saving. Warnings are advice.">Checks <span class="badge" id="check-badge">0</span></button>
     </div>
     <div class="pane" id="pane-file">
       <label for="draft" class="sr">File content</label>
@@ -150,14 +150,15 @@
     <div class="pane" id="pane-checks" hidden><ul class="results" id="results"></ul></div>
     <div class="actions">
       <button class="btn primary" id="primary" disabled>Download .zip</button>
-      <button class="btn" id="download">Download .zip</button>
-      <button class="btn" id="copy">Copy file</button>
-      <button class="btn" id="reset">Reset</button>
+      <button class="btn" id="download" data-tip="Download a zip with the right folders. Unzip it in your project.">Download .zip</button>
+      <button class="btn" id="copy" data-tip="Copy the file to your clipboard.">Copy file</button>
+      <button class="btn" id="reset" data-tip="Throw away your edits and build the file again from the form.">Reset</button>
     </div>
     <div class="grip" id="grip" role="separator" aria-orientation="horizontal" aria-label="Resize the height of the preview" tabindex="0" title="Drag to change the height. Double-click to reset."></div>
   </aside>
 </main>
 <footer><span>MIT License</span><span>·</span><a href="https://github.com/YaroslavMatushevych/claude-skill-templates/blob/main/LICENSE" target="_blank" rel="noopener">License</a><span>·</span><a href="https://github.com/YaroslavMatushevych/claude-skill-templates" target="_blank" rel="noopener">Source</a></footer>
+<div id="tooltip" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script type="module" src="/app.js"></script>
 </body>

@@ -4,6 +4,14 @@ const $ = (id) => document.getElementById(id);
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const TOOL_LIST = ["Read", "Grep", "Glob", "Edit", "Write", "NotebookEdit", "Bash", "PowerShell", "WebFetch", "WebSearch", "TodoWrite", "LSP", "Agent", "Skill"];
 
+
+const TOOL_TIPS = {
+  Read: "Read files.", Grep: "Search inside files.", Glob: "Find files by name pattern.", Edit: "Change part of a file.", Write: "Create or overwrite a file.",
+  NotebookEdit: "Edit Jupyter notebook cells. It is an edit tool.", Bash: "Run shell commands. A shell can also write files, so it is not read-only.",
+  PowerShell: "Run PowerShell commands on Windows. It can also write files.", WebFetch: "Download a web page.", WebSearch: "Search the web.",
+  TodoWrite: "Keep a to-do list while it works.", LSP: "Code intelligence: definitions and references.", Agent: "Start another agent.", Skill: "Run a skill.",
+};
+
 // Who can start a skill. Both fields are in the docs: disable-model-invocation and user-invocable.
 const STARTERS = {
   both: "You can type /name, and Claude loads it on its own when the description fits.",
@@ -63,7 +71,7 @@ const PICKERS = [
 function renderPicker(p) {
   const set = state.sets[p.set];
   const names = [...TOOL_LIST, ...[...set].filter((n) => !TOOL_LIST.includes(n))];
-  $(p.box).innerHTML = names.map((t) => `<label><input type="checkbox" value="${esc(t)}"${set.has(t) ? " checked" : ""}>${esc(t)}</label>`).join("");
+  $(p.box).innerHTML = names.map((t) => `<label data-tip="${esc(TOOL_TIPS[t] || "A tool or an MCP rule you added.")}"><input type="checkbox" value="${esc(t)}"${set.has(t) ? " checked" : ""}>${esc(t)}</label>`).join("");
 }
 
 // ---------- payloads ----------
@@ -151,7 +159,7 @@ async function pick(name, force) {
   state.template = name;
   document.querySelectorAll(".tpl").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.t === name)));
   const t = state.data[state.kind].find((x) => x.name === name);
-  $("guide-body").innerHTML = [["Use when", t.useWhen], ["Change", t.change], ["Keep", t.keep], ["Test", t.test]]
+  $("guide-body").innerHTML = [["When to use it", t.useWhen], ["What to edit", t.change], ["What to keep", t.keep], ["How to test it", t.test]]
     .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${md(v)}</dd>`).join("");
 
   // Fill the form with what the template really has, so the form and the file agree.
@@ -271,8 +279,8 @@ function renderRefs() {
       if (r.fetchError) body += `<div class="note err">${esc(r.fetchError)}</div>`;
     }
     return `<div class="item"><div class="item-head">${title}<button class="btn small" data-rm="ref" data-i="${i}">Remove</button></div>${body}
-      <div class="row"><input type="text" data-f="as" data-i="${i}" placeholder="file name, for example notes.md" value="${esc(r.as || "")}" aria-label="File name">
-      <input type="text" data-f="when" data-i="${i}" placeholder="when to read it, for example you write the notes" value="${esc(r.when || "")}" aria-label="When to read it" style="flex:2"></div></div>`;
+      <div class="row"><input type="text" data-f="as" data-i="${i}" placeholder="file name, for example notes.md" value="${esc(r.as || "")}" aria-label="File name" data-tip="The file is saved as references/<this name>.">
+      <input type="text" data-f="when" data-i="${i}" placeholder="when to read it, for example you write the notes" value="${esc(r.when || "")}" aria-label="When to read it" data-tip="Say exactly when Claude should open this file. These words decide if it ever does." style="flex:2"></div></div>`;
   };
   const script = (s, i) => `<div class="item"><div class="item-head">Script<button class="btn small" data-rm="script" data-i="${i}">Remove</button></div>
     <input type="text" data-sf="as" data-i="${i}" placeholder="file name, for example build.mjs" value="${esc(s.as || "")}" aria-label="Script name">
@@ -313,7 +321,7 @@ function renderSkillPick() {
   $("skillpick").innerHTML = skillChoices().map((c) => {
     const off = c.userStarted && !state.sets.skills.has(c.name);
     const title = c.userStarted ? "Only you start this skill, so an agent cannot load it." : c.tag;
-    return `<label title="${esc(title)}"${off ? ' style="opacity:.5"' : ""}><input type="checkbox" value="${esc(c.name)}"${state.sets.skills.has(c.name) ? " checked" : ""}${off ? " disabled" : ""}>${esc(c.name)}</label>`;
+    return `<label data-tip="${esc(title)}"${off ? ' style="opacity:.5"' : ""}><input type="checkbox" value="${esc(c.name)}"${state.sets.skills.has(c.name) ? " checked" : ""}${off ? " disabled" : ""}>${esc(c.name)}</label>`;
   }).join("");
 }
 
@@ -415,6 +423,58 @@ function wire() {
   $("primary").onclick = () => (state.data.hosted ? doDownload() : doSave());
 }
 
+
+// ---------- tooltips: one real tooltip, so nothing is clipped. Shows on hover and on keyboard focus. ----------
+
+function initTooltips() {
+  // Labels get an info icon you can tab to. The icon carries the text for screen readers too.
+  document.querySelectorAll("label.field[data-tip]").forEach((label) => {
+    const tip = label.dataset.tip;
+    label.removeAttribute("data-tip");
+    const icon = document.createElement("span");
+    icon.className = "info";
+    icon.tabIndex = 0;
+    icon.setAttribute("role", "img");
+    icon.setAttribute("aria-label", tip);
+    icon.dataset.tip = tip;
+    icon.textContent = "i";
+    icon.addEventListener("click", (e) => e.preventDefault());
+    label.appendChild(icon);
+  });
+  const tip = $("tooltip");
+  let shown = null;
+  let timer = 0;
+  const hide = () => { clearTimeout(timer); tip.hidden = true; shown = null; };
+  const show = (el) => {
+    const text = el.dataset.tip;
+    if (!text) return;
+    tip.textContent = text;
+    tip.hidden = false;
+    shown = el;
+    const r = el.getBoundingClientRect();
+    const t = tip.getBoundingClientRect();
+    let x = Math.min(window.innerWidth - t.width - 8, Math.max(8, r.left + r.width / 2 - t.width / 2));
+    let y = r.bottom + 8;
+    if (y + t.height > window.innerHeight - 8) y = Math.max(8, r.top - t.height - 8);
+    tip.style.left = `${x}px`;
+    tip.style.top = `${y}px`;
+  };
+  document.addEventListener("pointerover", (e) => {
+    const el = e.target.closest?.("[data-tip]");
+    if (!el || el === shown) return;
+    clearTimeout(timer);
+    timer = setTimeout(() => show(el), 350);
+  });
+  document.addEventListener("pointerout", (e) => {
+    const el = e.target.closest?.("[data-tip]");
+    if (el && !el.contains(e.relatedTarget)) hide();
+  });
+  document.addEventListener("focusin", (e) => { const el = e.target.closest?.("[data-tip]"); if (el) show(el); });
+  document.addEventListener("focusout", hide);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
+  document.addEventListener("scroll", hide, true);
+  document.addEventListener("pointerdown", hide);
+}
 
 // ---------- movable and resizable panels (kept in this browser) ----------
 
@@ -527,8 +587,10 @@ function initLayout() {
   const agents = ["Explore", "Plan", "general-purpose", ...state.data.agent.map((a) => a.name)];
   $("agent-list").innerHTML = [...new Set(agents)].map((a) => `<option value="${esc(a)}">`).join("");
   $("primary").textContent = state.data.hosted ? "Download .zip" : "Save to project";
+  $("primary").dataset.tip = state.data.hosted ? "Download a zip with the right folders. Unzip it in your project." : "Write the files into your project folder.";
   $("download").hidden = !!state.data.hosted;
   wire();
+  initTooltips();
   initLayout();
   setKind("skill");
 })();
