@@ -36,7 +36,11 @@ const post = (path, body, origin = BASE) =>
 
 test("serves the page and the template lists", async () => {
   assert.match(await (await fetch(BASE)).text(), /Skill builder/);
+  for (const f of ["app.js", "style.css", "zip.js", "favicon.svg"]) assert.equal((await fetch(`${BASE}/${f}`)).status, 200, f);
+  assert.equal((await fetch(`${BASE}/scripts/lib.mjs`)).status, 404);
   const t = await (await fetch(`${BASE}/api/templates`)).json();
+  assert.equal(t.hosted, false);
+  assert.equal("project" in t, false);
   assert.deepEqual(t.skill.map((x) => x.name), ["generate", "guardrail", "investigate", "knowledge", "review", "workflow"]);
   assert.deepEqual(t.agent.map((x) => x.name), ["explorer", "implementer", "planner", "reviewer", "tester"]);
   assert.ok(t.skill[0].keep.length > 0);

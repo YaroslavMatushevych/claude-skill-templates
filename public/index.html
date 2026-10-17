@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Build Claude Code skills and agents from templates. Add references, check the result, and download it.">
+<meta name="color-scheme" content="light dark">
+<title>Skill builder for Claude Code</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><img src="/favicon.svg" alt="" width="28" height="28"> Skill builder</div>
+  <div class="segmented" role="tablist" aria-label="What to build">
+    <button role="tab" id="tab-skill" aria-selected="true">Skill</button>
+    <button role="tab" id="tab-agent" aria-selected="false">Agent</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill" id="status" role="status" aria-live="polite">Pick a template</span>
+  <a class="toplink" href="https://github.com/YaroslavMatushevych/claude-skill-templates" target="_blank" rel="noopener">GitHub</a>
+</header>
+
+<main class="layout">
+  <div class="steps">
+    <section class="card step done" id="step-1" aria-labelledby="t1">
+      <div class="step-head"><span class="step-num">1</span><h2 class="step-title" id="t1">Pick a template</h2></div>
+      <p class="step-sub">Each one is for a different purpose. You can edit everything later.</p>
+      <div class="templates" id="templates"></div>
+      <details class="guide" id="guide" open><summary>How to adapt it</summary><dl id="guide-body"></dl></details>
+    </section>
+
+    <section class="card step" id="step-2" aria-labelledby="t2">
+      <div class="step-head"><span class="step-num">2</span><h2 class="step-title" id="t2">Describe it</h2></div>
+      <p class="step-sub">The description decides when Claude uses it. Say what it makes and when to use it.</p>
+      <label class="field" for="name">Name <span class="hint">lowercase letters, digits and hyphens</span></label>
+      <input type="text" id="name" placeholder="release-notes" autocomplete="off" spellcheck="false" aria-describedby="name-note">
+      <div class="note" id="name-note"></div>
+      <label class="field" for="description">Description <span class="hint counter" id="counter">0 / 1024</span></label>
+      <textarea id="description" rows="3" placeholder="Write release notes from the git log. Use when asked for release notes."></textarea>
+      <div id="agent-options" hidden>
+        <div class="row">
+          <div><label class="field" for="model">Model</label>
+            <select id="model"><option value="">Template default</option><option>haiku</option><option>sonnet</option><option>opus</option><option>inherit</option></select></div>
+          <div><label class="field" for="maxTurns">Max turns</label><input type="number" id="maxTurns" min="1" placeholder="Default"></div>
+        </div>
+        <label class="field">Tools <span class="hint">the tool list is the guard</span></label>
+        <div class="toolchips" id="tools"></div>
+        <label class="field" for="skills">Skills it follows <span class="hint">comma separated names</span></label>
+        <input type="text" id="skills" placeholder="workflow" autocomplete="off" spellcheck="false">
+      </div>
+      <details class="adv"><summary>Advanced</summary>
+        <label class="field" for="outDir">Folder <span class="hint">where the file goes, relative to your project</span></label>
+        <input type="text" id="outDir" autocomplete="off" spellcheck="false">
+      </details>
+    </section>
+
+    <section class="card step" id="step-3" aria-labelledby="t3">
+      <div class="step-head"><span class="step-num">3</span><h2 class="step-title" id="t3">Add references and scripts</h2><span class="optional">optional</span></div>
+      <p class="step-sub">A reference is a file Claude reads when it is needed. Say exactly when, because those words decide if Claude ever opens it.</p>
+      <div id="refs"></div>
+      <div class="adders">
+        <button class="btn dashed" id="add-ref-text">+ Paste text</button>
+        <button class="btn dashed" id="add-ref-url">+ From a URL</button>
+        <button class="btn dashed" id="add-ref-path">+ From a file in the project</button>
+        <button class="btn dashed" id="add-script">+ Script</button>
+      </div>
+    </section>
+  </div>
+
+  <aside class="card preview" aria-label="Preview">
+    <div class="tabs" role="tablist" aria-label="Preview">
+      <button class="tab" role="tab" id="pt-file" aria-selected="true">Edit file</button>
+      <button class="tab" role="tab" id="pt-final" aria-selected="false">Result</button>
+      <button class="tab" role="tab" id="pt-checks" aria-selected="false">Checks <span class="badge" id="check-badge">0</span></button>
+    </div>
+    <div class="pane" id="pane-file">
+      <label for="draft" class="sr">File content</label>
+      <textarea id="draft" class="mono" spellcheck="false"></textarea>
+    </div>
+    <div class="pane" id="pane-final" hidden>
+      <pre id="final" class="mono" style="padding:12px;border-radius:10px">Nothing to show yet.</pre>
+      <ul class="filelist" id="files"></ul>
+    </div>
+    <div class="pane" id="pane-checks" hidden><ul class="results" id="results"></ul></div>
+    <div class="actions">
+      <button class="btn primary" id="primary" disabled>Download .zip</button>
+      <button class="btn" id="download">Download .zip</button>
+      <button class="btn" id="copy">Copy file</button>
+      <button class="btn" id="reset">Reset</button>
+    </div>
+  </aside>
+</main>
+<footer><span>MIT License</span><span>·</span><a href="https://github.com/YaroslavMatushevych/claude-skill-templates/blob/main/LICENSE" target="_blank" rel="noopener">License</a><span>·</span><a href="https://github.com/YaroslavMatushevych/claude-skill-templates" target="_blank" rel="noopener">Source</a></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

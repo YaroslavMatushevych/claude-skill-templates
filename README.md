@@ -62,9 +62,25 @@ Every template has an `INSTRUCTIONS.md` with **Change** (what to edit for your p
 1. Pick a template. The page shows when to use it and what to change.
 2. Give it a name and a description. The draft updates as you type. You can edit the whole file.
 3. For a skill, add references and scripts. A reference is pasted text, a URL, or a file from your project. You must say when Claude should read it. For an agent, choose the model, the tools and the skills.
-4. The checks update as you work. Save when there are no errors.
+4. The checks update as you work. Save to your project, or download a zip, when there are no errors.
 
 The server listens on `127.0.0.1` only, refuses requests from other sites, and writes only inside the project folder.
+
+## Deploy the UI
+
+The UI also runs as a hosted app, for example on Vercel. In hosted mode the app writes nothing to a disk and reads no local files. You get a **Download .zip** with the right folders (`.claude/skills/<name>/...`) that you unzip in your project.
+
+1. Import this repo in Vercel. Framework preset: **Other**. Leave the build command empty. `vercel.json` already sets the output folder (`public`), bundles the templates into the functions, and adds security headers.
+2. Or from a terminal: `npx vercel` for a preview, `npx vercel --prod` for production.
+
+What changes in hosted mode:
+
+- No "Save to project" and no "file in the project" reference. Use Download and pasted text.
+- The browser downloads URL references, not the server. A site that blocks browser downloads needs pasted text.
+- Limits: 10 references, 5 scripts, 300 KB per file, 1 MB per request.
+- The API accepts requests from its own origin only.
+
+The hosted code path is covered by tests and was run locally with the real API functions. I have not deployed it to Vercel myself.
 
 ## Build with the command line
 
