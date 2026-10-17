@@ -42,6 +42,14 @@ The page opens in your browser. It saves into `.claude/skills` or `.claude/agent
     <td><b>Agents too.</b> Choose the model, the tools and the skills it follows from a list.</td>
     <td><b>Checks as you type.</b> This one catches a common trap: <code>allowed-tools</code> does not block anything.</td>
   </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/docs.png" alt="The Docs page: what to use when, and why"></td>
+    <td width="50%"><img src="docs/screenshots/dark.png" alt="The Build page in the dark theme"></td>
+  </tr>
+  <tr>
+    <td><b>A Docs page.</b> How to use it, what to pick when, and why each template is built the way it is.</td>
+    <td><b>Light and dark.</b> Follows your computer, or choose one. Panels can be resized and swapped.</td>
+  </tr>
 </table>
 
 ## What do you want to build?
@@ -87,7 +95,7 @@ A common chain: `explorer` finds the code, `planner` writes a plan, you approve 
 | [`reviewer`](agent-templates/reviewer/) | Read, Grep, Glob | sonnet | You want a review that cannot change anything. You pass it the diff. |
 | [`tester`](agent-templates/tester/) | Read, Edit, Write, Grep, Glob, Bash | sonnet | You have acceptance criteria and want failing tests first. |
 
-Every template has an `INSTRUCTIONS.md` with the same four parts: when to use it, what to edit for your project, what to keep, and how to test it. The builder shows them under "About this template".
+Every template has an `INSTRUCTIONS.md` with the same parts: when to use it, examples, what to edit for your project, what to keep, and how to test it. The builder shows the examples under the cards. The Docs page explains when to use each template and why.
 
 ## What you can set
 

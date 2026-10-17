@@ -157,3 +157,13 @@ test("local mode lists the skills in the project, hosted mode never does", () =>
   assert.deepEqual(createService({ hosted: true, project: dir }).templates().projectSkills, []);
   rmSync(dir, { recursive: true });
 });
+
+test("every template has a purpose and three examples for the box under the cards", () => {
+  const all = createService({ hosted: true }).templates();
+  for (const kind of ["skill", "agent"]) {
+    for (const t of all[kind]) {
+      assert.ok(t.purpose.length > 20, `${t.name} purpose`);
+      assert.equal(t.examples.length, 3, `${t.name} examples`);
+    }
+  }
+});

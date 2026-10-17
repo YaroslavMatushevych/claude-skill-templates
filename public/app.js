@@ -159,8 +159,9 @@ async function pick(name, force) {
   state.template = name;
   document.querySelectorAll(".tpl").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.t === name)));
   const t = state.data[state.kind].find((x) => x.name === name);
-  $("guide-body").innerHTML = [["When to use it", t.useWhen], ["What to edit", t.change], ["What to keep", t.keep], ["How to test it", t.test]]
-    .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${md(v)}</dd>`).join("");
+  $("examples").innerHTML = t.examples?.length
+    ? `<b>${esc(t.name)} is good for</b><ul>${t.examples.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
+    : "";
 
   // Fill the form with what the template really has, so the form and the file agree.
   const fm = t.frontmatter;
@@ -253,14 +254,16 @@ function show(r, hint) {
   const n = r.errors.length + r.warnings.length;
   badge.textContent = hint ? "!" : String(n);
   badge.className = `badge ${r.errors.length ? "err" : n || hint ? "warn" : "ok"}`;
-  const status = hint ? ["", hint] : r.errors.length ? ["err", `${r.errors.length} ${r.errors.length === 1 ? "error" : "errors"} to fix`] : r.warnings.length ? ["warn", "Ready, with advice"] : ["ok", "Ready"];
-  $("status").className = `pill ${status[0]}`;
-  $("status").textContent = status[1];
   $("final").textContent = r.finalText || "Nothing to show yet.";
   $("files").innerHTML = (r.files || []).map((f) => `<li>${esc(f.path)}</li>`).join("");
+  // The buttons stay clickable for the tooltip and the keyboard. They do nothing while there are errors, and they say why.
   const ready = !hint && r.errors.length === 0;
-  $("primary").disabled = !ready;
-  $("download").disabled = !ready;
+  const reason = hint ? "Give it a name first." : `Fix the ${r.errors.length === 1 ? "error" : r.errors.length + " errors"} first. See the Checks tab.`;
+  for (const id of ["primary", "download"]) {
+    $(id).setAttribute("aria-disabled", String(!ready));
+    $(id).classList.toggle("is-off", !ready);
+    $(id).dataset.tip = ready ? ($(id) === $("primary") && !state.data?.hosted ? "Write the files into your project folder." : "Download a zip with the right folders. Unzip it in your project.") : reason;
+  }
   $("copy").disabled = !r.finalText;
 }
 
@@ -328,6 +331,7 @@ function renderSkillPick() {
 // ---------- actions ----------
 
 async function doDownload() {
+  if ($("download").getAttribute("aria-disabled") === "true" && $("primary").getAttribute("aria-disabled") === "true") { toast($("primary").dataset.tip); return; }
   const files = state.last?.files ?? [];
   if (!files.length) return;
   const blob = new Blob([zip(files)], { type: "application/zip" });
@@ -340,14 +344,15 @@ async function doDownload() {
 }
 
 async function doSave() {
-  $("primary").disabled = true;
+  if ($("primary").getAttribute("aria-disabled") === "true") { toast($("primary").dataset.tip); return; }
+  $("primary").setAttribute("aria-disabled", "true");
   try {
     const r = await api("/api/save", checkPayload());
     show(r);
     toast(`Saved ${r.files.length} ${r.files.length === 1 ? "file" : "files"}: ${r.files.map((f) => f.path).join(", ")}`);
   } catch (e) {
     toast(e.message);
-    $("primary").disabled = false;
+    $("primary").setAttribute("aria-disabled", "false");
   }
 }
 
@@ -476,6 +481,78 @@ function initTooltips() {
   document.addEventListener("pointerdown", hide);
 }
 
+// ---------- theme: system, light or dark. The choice is remembered in this browser. ----------
+
+const THEMES = [
+  { id: "system", label: "◐ System", tip: "Theme: follows your computer. Click for light." },
+  { id: "light", label: "☀ Light", tip: "Theme: light. Click for dark." },
+  { id: "dark", label: "☾ Dark", tip: "Theme: dark. Click to follow your computer." },
+];
+function initTheme() {
+  let saved = "system";
+  try { saved = localStorage.getItem("jig-theme") || "system"; } catch { /* ignore */ }
+  let index = Math.max(0, THEMES.findIndex((t) => t.id === saved));
+  const apply = () => {
+    const t = THEMES[index];
+    if (t.id === "system") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", t.id);
+    $("theme").textContent = t.label;
+    $("theme").dataset.tip = t.tip;
+    $("theme").setAttribute("aria-label", t.tip);
+    try { localStorage.setItem("jig-theme", t.id); } catch { /* ignore */ }
+  };
+  $("theme").onclick = () => { index = (index + 1) % THEMES.length; apply(); };
+  apply();
+}
+
+// ---------- two views: Build and Docs, chosen by the address (#build or #docs) ----------
+
+function showView(view) {
+  const docs = view === "docs";
+  document.body.classList.toggle("docs", docs);
+  $("docs-view").hidden = !docs;
+  $("nav-build").toggleAttribute("aria-current", !docs);
+  $("nav-docs").toggleAttribute("aria-current", docs);
+  if (!docs) $("nav-build").setAttribute("aria-current", "page");
+  else $("nav-docs").setAttribute("aria-current", "page");
+  document.title = docs ? "Docs: Jig, skill builder for Claude Code" : "Jig: skill builder for Claude Code";
+  window.scrollTo(0, 0);
+}
+function route() {
+  showView(location.hash.startsWith("#docs") ? "docs" : "build");
+}
+function initDocs() {
+  window.addEventListener("hashchange", route);
+  // The table of contents scrolls inside the Docs page and marks the section you are reading.
+  document.querySelectorAll(".doc-toc a[data-scroll]").forEach((a) => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById(a.dataset.scroll)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+  const links = new Map([...document.querySelectorAll(".doc-toc a[data-scroll]")].map((a) => [a.dataset.scroll, a]));
+  if ("IntersectionObserver" in window) {
+    const seen = new Set();
+    const observer = new IntersectionObserver((entries) => {
+      for (const e of entries) (e.isIntersecting ? seen.add(e.target.id) : seen.delete(e.target.id));
+      const first = [...document.querySelectorAll(".doc section")].find((s) => seen.has(s.id));
+      links.forEach((a, id) => a.classList.toggle("on", first?.id === id));
+    }, { rootMargin: "-90px 0px -60% 0px" });
+    document.querySelectorAll(".doc section").forEach((s) => observer.observe(s));
+  }
+  // "Try it" buttons open the Build page with a template picked.
+  document.querySelectorAll("[data-go]").forEach((b) => {
+    b.addEventListener("click", async () => {
+      const [kind, template] = b.dataset.go.split(":");
+      location.hash = "#build";
+      showView("build");
+      if (state.kind !== kind) setKind(kind);
+      await pick(template, true);
+    });
+  });
+  route();
+}
+
 // ---------- movable and resizable panels (kept in this browser) ----------
 
 const LAYOUT_KEY = "skill-builder-layout";
@@ -581,16 +658,17 @@ function initLayout() {
   try {
     state.data = await api("/api/templates");
   } catch {
-    $("status").textContent = "Could not load the templates.";
+    toast("Could not load the templates. Reload the page.");
     return;
   }
   const agents = ["Explore", "Plan", "general-purpose", ...state.data.agent.map((a) => a.name)];
   $("agent-list").innerHTML = [...new Set(agents)].map((a) => `<option value="${esc(a)}">`).join("");
   $("primary").textContent = state.data.hosted ? "Download .zip" : "Save to project";
-  $("primary").dataset.tip = state.data.hosted ? "Download a zip with the right folders. Unzip it in your project." : "Write the files into your project folder.";
   $("download").hidden = !!state.data.hosted;
   wire();
   initTooltips();
   initLayout();
+  initTheme();
+  initDocs();
   setKind("skill");
 })();

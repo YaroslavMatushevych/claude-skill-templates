@@ -120,6 +120,7 @@ export function templateInfo(kind, name) {
     disallowed: (fields["disallowed-tools"] ?? "").split(/\s+/).filter(Boolean),
     purpose: instructionField(instructions, "Purpose"),
     useWhen: instructionField(instructions, "Use when"),
+    examples: instructionField(instructions, "Examples").split(";").map((x) => x.trim()).filter(Boolean),
     change: instructionField(instructions, "Change"),
     keep: instructionField(instructions, "Keep"),
     test: instructionField(instructions, "Test"),

@@ -6,13 +6,21 @@
   --radius: 14px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0b0d12; --surface: #131722; --raised: #171c29; --border: #252c3d; --text: #e8eaf0; --muted: #9aa3b5;
     --primary: #818cf8; --primary-hover: #a5b4fc; --on-primary: #0b0d12; --primary-soft: #1b2040;
     --ok: #4ade80; --ok-soft: #12261a; --warn: #fbbf24; --warn-soft: #2a2110; --err: #f87171; --err-soft: #2b1416;
     --code-bg: #0d1018; --shadow: none;
   }
 }
+:root[data-theme="dark"] {
+    --bg: #0b0d12; --surface: #131722; --raised: #171c29; --border: #252c3d; --text: #e8eaf0; --muted: #9aa3b5;
+    --primary: #818cf8; --primary-hover: #a5b4fc; --on-primary: #0b0d12; --primary-soft: #1b2040;
+    --ok: #4ade80; --ok-soft: #12261a; --warn: #fbbf24; --warn-soft: #2a2110; --err: #f87171; --err-soft: #2b1416;
+    --code-bg: #0d1018; --shadow: none;
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
@@ -32,7 +40,7 @@ button { font: inherit; }
 .segmented button { border: 0; background: transparent; color: var(--muted); padding: 6px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .segmented button[aria-selected="true"], .segmented button[aria-checked="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 .spacer { flex: 1; }
-.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--code-bg); color: var(--muted); }
+.pill { border: 0; font: inherit; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--code-bg); color: var(--muted); }
 .pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .pill.ok { background: var(--ok-soft); color: var(--ok); }
 .pill.err { background: var(--err-soft); color: var(--err); }
@@ -175,3 +183,50 @@ body.dragging iframe, body.dragging textarea { pointer-events: none; }
 #tooltip[hidden] { display: none; }
 .info { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: 6px; border-radius: 50%; border: 1.5px solid var(--muted); color: var(--muted); font: 700 11px/1 system-ui, sans-serif; cursor: help; vertical-align: 1px; user-select: none; }
 .info:hover, .info:focus-visible { border-color: var(--primary); color: var(--primary); }
+
+/* main navigation and the docs page */
+.mainnav { display: flex; gap: 2px; }
+.mainnav a { color: var(--muted); text-decoration: none; font-weight: 600; padding: 6px 14px; border-radius: 8px; }
+.mainnav a:hover { color: var(--text); background: var(--code-bg); }
+.mainnav a[aria-current="page"] { color: var(--primary); background: var(--primary-soft); }
+body.docs .build-only, body.docs #build-view { display: none; }
+.docs-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 40px; max-width: 1100px; margin: 0 auto; padding: 32px 28px 56px; align-items: start; }
+.doc-toc { position: sticky; top: 84px; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.doc-toc b { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; }
+.doc-toc a { color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 8px; border-left: 2px solid transparent; }
+.doc-toc a:hover { color: var(--text); background: var(--code-bg); }
+.doc-toc a.on { color: var(--primary); border-left-color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+.doc { min-width: 0; max-width: 760px; font-size: 16px; line-height: 1.65; }
+.doc h1 { font-size: 34px; line-height: 1.2; letter-spacing: -.02em; margin: 0 0 12px; }
+.doc .lead { font-size: 18px; color: var(--muted); margin: 0 0 8px; }
+.doc section { margin-top: 44px; scroll-margin-top: 90px; }
+.doc h2 { font-size: 24px; letter-spacing: -.01em; margin: 0 0 14px; padding-top: 8px; border-top: 1px solid var(--border); }
+.doc h3 { font-size: 17px; margin: 22px 0 8px; }
+.doc p, .doc ul, .doc ol { margin: 0 0 14px; }
+.doc li { margin-bottom: 6px; }
+.doc table { width: 100%; border-collapse: collapse; margin: 6px 0 18px; font-size: 14.5px; line-height: 1.5; }
+.doc th, .doc td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.doc thead th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border-bottom: 2px solid var(--border); }
+.doc tbody th { font-weight: 600; white-space: nowrap; }
+.doc pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; overflow: auto; font: 13px/1.6 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+@media (max-width: 1000px) {
+  .docs-layout { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
+  .doc-toc { position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; }
+  .doc-toc b { width: 100%; margin: 0; }
+  .doc-toc a { border: 1px solid var(--border); }
+  .doc table { display: block; overflow-x: auto; }
+  body.docs .topbar { flex-wrap: wrap; }
+}
+/* one scroller in the Edit file pane: the text box scrolls, the pane does not */
+#pane-file { overflow: hidden; display: flex; }
+#pane-file[hidden] { display: none; }
+#pane-file #draft { flex: 1; height: 100%; min-height: 0; }
+
+.btn.is-off { opacity: .45; cursor: not-allowed; }
+.btn.primary.is-off:hover { background: var(--primary); }
+
+/* examples box under the template cards: always visible, not an accordion */
+.examples { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--raised); }
+.examples b { display: block; font-size: 14px; margin-bottom: 6px; }
+.examples ul { margin: 0; padding-left: 20px; font-size: 14px; color: var(--text); }
+.examples li { margin: 3px 0; }

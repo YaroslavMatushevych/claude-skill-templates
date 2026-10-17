@@ -2,6 +2,7 @@
 
 **Purpose:** Produce a document or message in the same format every time, using only what Claude already knows.
 **Use when:** you want the same kind of output again and again: a plan, a spec, a summary, a pull request description or a status message.
+**Examples:** A pull request description from your branch; A spec after a planning chat; A weekly status update
 
 **Change:** the list under the **Shape** heading in the file. Replace its labels (Goal, Details, Check, Open questions) with the sections your output needs, and change the length limit.
 **Keep:** the rules "do not interview" and "never guess: put gaps under Open questions", and the **Check** line. A Check line says how to tell the output is right, so you do not end up with a wish.

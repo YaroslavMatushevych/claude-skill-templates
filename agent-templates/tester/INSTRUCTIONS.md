@@ -2,6 +2,7 @@
 
 **Purpose:** Write the failing tests before the code exists.
 **Use when:** you have acceptance criteria (what the finished work must do) and want the tests first, or you want tests added to a change.
+**Examples:** Write failing tests for acceptance criteria; Add tests to a function that has none; Cover a bug with a test before you fix it
 
 **Change:** the test command and the test style rules for your project.
 **Keep:** "do not write the implementation" and "confirm each test fails first". A test that never failed proves nothing.

@@ -21,7 +21,7 @@ const PROJECT = resolve(flag("dir", process.cwd()));
 const service = createService({ hosted: false, project: PROJECT });
 
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webmanifest": "application/manifest+json" };
-const STATIC = /^(index\.html|app\.js|style\.css|zip\.js|site\.webmanifest|brand\/[a-z0-9._-]+\.(svg|png))$/;
+const STATIC = /^(index\.html|app\.js|style\.css|zip\.js|theme\.js|site\.webmanifest|brand\/[a-z0-9._-]+\.(svg|png))$/;
 
 function readBody(req) {
   return new Promise((ok, fail) => {

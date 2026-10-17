@@ -37,10 +37,14 @@ const post = (path, body, origin = BASE) =>
 test("serves the page and the template lists", async () => {
   const page = await (await fetch(BASE)).text();
   assert.match(page, /Skill builder/);
-  for (const id of ["splitter", "grip", "swap", "reset-layout"]) assert.match(page, new RegExp(`id="${id}"`), id);
+  for (const id of ["splitter", "grip", "swap", "reset-layout", "docs-view", "nav-docs", "nav-build", "theme"]) assert.match(page, new RegExp(`id="${id}"`), id);
   const app = await (await fetch(`${BASE}/app.js`)).text();
   assert.match(app, /skill-builder-layout/);
-  for (const f of ["app.js", "style.css", "zip.js", "site.webmanifest", "brand/mark.svg", "brand/favicon.svg", "brand/logo.svg", "brand/logo-light.svg", "brand/icon-192.png", "brand/icon-512.png", "brand/apple-touch-icon.png", "brand/og-image.png"]) assert.equal((await fetch(`${BASE}/${f}`)).status, 200, f);
+  assert.match(app, /jig-theme/);
+  assert.doesNotMatch(page, /id="status"/);
+  // the Docs page covers the main topics
+  for (const h of ["Quick start", "Skill or agent?", "Which template?", "Who can start a skill", "what really limits Claude", "Models and effort", "References and scripts", "The checks", "Save or download", "Common questions"]) assert.ok(page.includes(h), h);
+  for (const f of ["app.js", "style.css", "zip.js", "theme.js", "site.webmanifest", "brand/mark.svg", "brand/favicon.svg", "brand/logo.svg", "brand/logo-light.svg", "brand/icon-192.png", "brand/icon-512.png", "brand/apple-touch-icon.png", "brand/og-image.png"]) assert.equal((await fetch(`${BASE}/${f}`)).status, 200, f);
   // PNG files must arrive as the exact bytes, with the PNG signature
   const png = Buffer.from(await (await fetch(`${BASE}/brand/icon-512.png`)).arrayBuffer());
   assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");

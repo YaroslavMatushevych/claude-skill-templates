@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Build Claude Code skills and agents from templates. Add references, check the result, and download it.">
 <meta name="color-scheme" content="light dark">
+<script src="/theme.js"></script>
 <title>Jig: skill builder for Claude Code</title>
 <meta name="theme-color" content="#4f46e5">
 <meta property="og:title" content="Jig: skill builder for Claude Code">
@@ -20,24 +21,28 @@
 <body>
 <header class="topbar">
   <div class="brand"><img src="/brand/mark.svg" alt="" width="32" height="32"><span class="brand-name">Jig</span><span class="brand-sub">Skill builder</span></div>
-  <div class="segmented" role="tablist" aria-label="What to build">
+  <nav class="mainnav" aria-label="Main">
+    <a href="#build" id="nav-build" aria-current="page">Build</a>
+    <a href="#docs" id="nav-docs">Docs</a>
+  </nav>
+  <div class="build-only segmented" role="tablist" aria-label="What to build">
     <button role="tab" id="tab-skill" aria-selected="true" data-tip="A skill is a procedure Claude follows in your session.">Skill</button>
     <button role="tab" id="tab-agent" aria-selected="false" data-tip="An agent is a separate worker with its own context and its own tools.">Agent</button>
   </div>
   <div class="spacer"></div>
-  <button class="toplink iconbtn" id="swap" type="button" title="Put the preview on the other side" data-tip="Put the preview on the other side.">⇄ Swap sides</button>
-  <button class="toplink iconbtn" id="reset-layout" type="button" title="Back to the default layout" data-tip="Back to the default layout.">Reset layout</button>
-  <span class="pill" id="status" role="status" aria-live="polite" data-tip="The result of the checks.">Pick a template</span>
+  <button class="toplink iconbtn build-only" id="swap" type="button" title="Put the preview on the other side" data-tip="Put the preview on the other side.">⇄ Swap sides</button>
+  <button class="toplink iconbtn build-only" id="reset-layout" type="button" title="Back to the default layout" data-tip="Back to the default layout.">Reset layout</button>
+  <button class="toplink iconbtn" id="theme" type="button" data-tip="Theme: follows your computer">◐ System</button>
   <a class="toplink" href="https://github.com/YaroslavMatushevych/claude-skill-templates" target="_blank" rel="noopener">GitHub</a>
 </header>
 
-<main class="layout">
+<main class="layout" id="build-view">
   <div class="steps">
     <section class="card step done" id="step-1" aria-labelledby="t1">
       <div class="step-head"><span class="step-num">1</span><h2 class="step-title" id="t1">Pick a template</h2></div>
       <p class="step-sub">Each one is for a different purpose. You can edit everything later.</p>
       <div class="templates" id="templates"></div>
-      <details class="guide" id="guide" open><summary>About this template</summary><p class="guide-note">Notes for you: when to use it, what to edit, what to keep. They are not saved in the file.</p><dl id="guide-body"></dl></details>
+      <div class="examples" id="examples" aria-live="polite"></div>
     </section>
 
     <section class="card step" id="step-2" aria-labelledby="t2">
@@ -157,7 +162,7 @@
     </div>
     <div class="pane" id="pane-checks" hidden><ul class="results" id="results"></ul></div>
     <div class="actions">
-      <button class="btn primary" id="primary" disabled>Download .zip</button>
+      <button class="btn primary" id="primary">Download .zip</button>
       <button class="btn" id="download" data-tip="Download a zip with the right folders. Unzip it in your project.">Download .zip</button>
       <button class="btn" id="copy" data-tip="Copy the file to your clipboard.">Copy file</button>
       <button class="btn" id="reset" data-tip="Throw away your edits and build the file again from the form.">Reset</button>
@@ -165,6 +170,192 @@
     <div class="grip" id="grip" role="separator" aria-orientation="horizontal" aria-label="Resize the height of the preview" tabindex="0" title="Drag to change the height. Double-click to reset."></div>
   </aside>
 </main>
+
+<div id="docs-view" hidden>
+  <div class="docs-layout">
+    <nav class="doc-toc" aria-label="On this page">
+      <b>On this page</b>
+      <a href="#docs" data-scroll="d-start">Quick start</a>
+      <a href="#docs" data-scroll="d-which">Skill or agent?</a>
+      <a href="#docs" data-scroll="d-templates">Which template?</a>
+      <a href="#docs" data-scroll="d-starters">Who can start a skill</a>
+      <a href="#docs" data-scroll="d-tools">Tools: what really limits Claude</a>
+      <a href="#docs" data-scroll="d-models">Models and effort</a>
+      <a href="#docs" data-scroll="d-agent">Agent settings</a>
+      <a href="#docs" data-scroll="d-refs">References and scripts</a>
+      <a href="#docs" data-scroll="d-checks">The checks</a>
+      <a href="#docs" data-scroll="d-save">Save or download</a>
+      <a href="#docs" data-scroll="d-cli">Command line</a>
+      <a href="#docs" data-scroll="d-faq">Common questions</a>
+    </nav>
+    <article class="doc">
+      <h1>How to use Jig</h1>
+      <p class="lead">Jig builds Claude Code skills and agents from templates. This page says how to use it, what to pick when, and why each template is built the way it is.</p>
+
+      <section id="d-start">
+        <h2>Quick start</h2>
+        <ol>
+          <li>On the <b>Build</b> page, choose <b>Skill</b> or <b>Agent</b> at the top. Not sure which? Read "Skill or agent?" below.</li>
+          <li>Pick a template. Each card says what it is for. The box under the cards lists examples of what it is good for.</li>
+          <li>Give it a name and a description. The file on the right changes as you type. You can also edit the file by hand.</li>
+          <li>Optional: choose who can start it, the model and the tools. Add references and scripts.</li>
+          <li>Open the <b>Checks</b> tab. Fix every error. Warnings are advice.</li>
+          <li>Save it into your project, or download a zip and unzip it in your project.</li>
+          <li>Use it. A skill: type <code>/name</code> in Claude Code, or ask for the task and Claude loads it when the description fits. An agent: ask "Use the <i>name</i> agent to ...", or open <code>/agents</code> to see it.</li>
+        </ol>
+        <p><button class="btn" data-go="skill:workflow">Try it: open the workflow template</button></p>
+      </section>
+
+      <section id="d-which">
+        <h2>Skill or agent?</h2>
+        <table>
+          <thead><tr><th></th><th>Skill</th><th>Agent</th></tr></thead>
+          <tbody>
+            <tr><th>What it is</th><td>A procedure Claude follows.</td><td>A separate worker with its own instructions.</td></tr>
+            <tr><th>Where it runs</th><td>In your chat. Its work stays in your context.</td><td>In its own context. Only a short result comes back.</td></tr>
+            <tr><th>Tools</th><td>Yours, with some pre-approved or blocked.</td><td>Only the tools you list. This is a hard limit.</td></tr>
+            <tr><th>Model</th><td>Your session's model, unless you set one.</td><td>Its own model. A cheap one is fine for simple work.</td></tr>
+            <tr><th>Use it when</th><td>You want a method done the same way each time.</td><td>The work is large or noisy, or it must not be able to change anything.</td></tr>
+          </tbody>
+        </table>
+        <p><b>Why not always an agent?</b> An agent starts with an empty context and returns only a summary. For a small task that is slower than a skill.</p>
+        <p><b>Why not always a skill?</b> A skill's work fills your chat. A search or a long test run can use a lot of it. Give that work to an agent.</p>
+        <p>They work together. An agent can follow a skill: add the skill under "Skills it follows". The agent then uses the skill as its steps.</p>
+      </section>
+
+      <section id="d-templates">
+        <h2>Which template?</h2>
+        <h3>Skill templates</h3>
+        <table>
+          <thead><tr><th>Template</th><th>Use it when</th><th>Why it is built this way</th></tr></thead>
+          <tbody>
+            <tr><th><code>workflow</code></th><td>You do the same task in the same order again and again.</td><td>Every step has a check, because a step with no check looks the same as a step that failed. It stops after two failed tries, so it never loops.</td></tr>
+            <tr><th><code>investigate</code></th><td>You ask where something is, how it works, or why it fails.</td><td>Every claim needs a file and a line, so you can check the answer yourself. It runs in its own context, so the search does not fill your chat.</td></tr>
+            <tr><th><code>generate</code></th><td>You want a plan, a spec, a summary or a message in the same format every time.</td><td>It never guesses: a gap becomes an open question. A Check line tells you if the output is right. You start it, because you know when the discussion is finished.</td></tr>
+            <tr><th><code>review</code></th><td>You want a second opinion before you merge.</td><td>Findings are ranked and end in a verdict. The edit tools are blocked, so it can only report.</td></tr>
+            <tr><th><code>knowledge</code></th><td>Claude makes the same mistake with a tool, a library or your code.</td><td>Claude already knows the basics. Only your own traps change what it does, so every line must stop a real mistake. It starts empty on purpose.</td></tr>
+            <tr><th><code>guardrail</code></th><td>Claude says "done" without proof.</td><td>Claude must run the proof and compare it with the claim. The table of excuses answers the excuses Claude really gives.</td></tr>
+          </tbody>
+        </table>
+        <h3>Agent templates</h3>
+        <table>
+          <thead><tr><th>Template</th><th>Use it when</th><th>Why it is built this way</th></tr></thead>
+          <tbody>
+            <tr><th><code>explorer</code></th><td>You need the right files before you answer or plan.</td><td>It only reads, and it runs on the small fast model, because searching is cheap work.</td></tr>
+            <tr><th><code>planner</code></th><td>A change touches more than one file and you want to approve the approach first.</td><td>It only reads and ends with a plan you can approve. Each step has a check.</td></tr>
+            <tr><th><code>implementer</code></th><td>A plan is approved and you want it built without watching every step.</td><td>It writes the check first, stays inside the plan, and stops after two failures. It is the only template that edits.</td></tr>
+            <tr><th><code>reviewer</code></th><td>You want a review that cannot change anything.</td><td>It has no shell and no edit tools. You pass it the diff in your message.</td></tr>
+            <tr><th><code>tester</code></th><td>You have acceptance criteria and want tests before the code.</td><td>It writes only tests. Each test must fail first, because a test that never failed proves nothing.</td></tr>
+          </tbody>
+        </table>
+        <p>A common chain: <code>explorer</code> finds the code, <code>planner</code> writes a plan, you approve it, <code>tester</code> writes the failing tests, <code>implementer</code> builds it, <code>reviewer</code> checks it.</p>
+      </section>
+
+      <section id="d-starters">
+        <h2>Who can start a skill</h2>
+        <table>
+          <thead><tr><th>Mode</th><th>You type <code>/name</code></th><th>Claude loads it alone</th><th>Use it for</th></tr></thead>
+          <tbody>
+            <tr><th>You or Claude</th><td>Yes</td><td>Yes</td><td>Most skills. This is the default.</td></tr>
+            <tr><th>Only you</th><td>Yes</td><td>No</td><td>Work with side effects: a release, a commit, a deploy. Claude must never start these by itself.</td></tr>
+            <tr><th>Only Claude</th><td>No, it is hidden</td><td>Yes</td><td>Background knowledge that is not useful as a command.</td></tr>
+          </tbody>
+        </table>
+        <p>Why it matters: Claude reads the description of every skill it may start, in every turn. A skill that only you start costs nothing until you call it. A skill that nobody can start is useless, and Jig reports it as an error.</p>
+      </section>
+
+      <section id="d-tools">
+        <h2>Tools: what really limits Claude</h2>
+        <p>These four settings look alike but do different things. I tested each one.</p>
+        <table>
+          <thead><tr><th>Setting</th><th>What it does</th><th>Does it limit Claude?</th></tr></thead>
+          <tbody>
+            <tr><th>Skill: <b>Allow without asking</b></th><td>Claude can use these tools without a permission prompt.</td><td>No. A skill with only Read, Grep and Glob allowed still wrote a file.</td></tr>
+            <tr><th>Skill: <b>Block these tools</b></th><td>Claude cannot use them while the skill runs.</td><td>Yes, for those tools. A shell command can still write a file.</td></tr>
+            <tr><th>Agent: <b>Tools</b></th><td>The agent can use only these.</td><td>Yes. An agent with Read, Grep and Glob had no Write and no shell. This is the hard limit.</td></tr>
+            <tr><th>Agent: a pattern such as <code>Bash(git log *)</code></th><td>It looks like a limit on Bash.</td><td>No. The agent still ran <code>ls -la</code>. Use the plain name, and know that it allows every use.</td></tr>
+          </tbody>
+        </table>
+        <p><b>For a hard read-only guarantee,</b> use an agent whose list has no Bash, Edit or Write. For a softer limit inside your chat, block the edit tools in a skill.</p>
+        <p><button class="btn" data-go="agent:reviewer">Try it: open the reviewer agent</button></p>
+      </section>
+
+      <section id="d-models">
+        <h2>Models and effort</h2>
+        <p><b>Model.</b> "Not set" means Claude Code picks one. <code>inherit</code> uses your current session's model. You can also type a full model ID.</p>
+        <p>A rule of thumb: use the small, fast model (<code>haiku</code>) for cheap work such as searching. Use <code>sonnet</code> for planning, building and review, where judgment matters. Use a larger model for hard problems.</p>
+        <p><b>Effort</b> is how hard the model thinks, from low to max. Higher costs more and takes longer. "Not set" is the normal level.</p>
+      </section>
+
+      <section id="d-agent">
+        <h2>Agent settings</h2>
+        <ul>
+          <li><b>Max turns.</b> The most steps the agent takes before it stops. Always set it, so a stuck run cannot go on for ever.</li>
+          <li><b>Skills it follows.</b> The agent follows these from the start. A skill that only you start cannot be loaded, so those are greyed out. The skill must exist in <code>.claude/skills</code>.</li>
+          <li><b>Permission mode.</b> <code>plan</code> is read-only planning. <code>acceptEdits</code> accepts file edits. <code>bypassPermissions</code> skips every prompt, so use it only in a sandbox.</li>
+          <li><b>Memory.</b> The agent keeps notes between sessions: <code>user</code> for all projects, <code>project</code> for this one, <code>local</code> for this one and not shared. Notes can go stale and nobody may read them. Use memory for an agent you work with every day. Leave it off for an agent that runs alone.</li>
+          <li><b>Work in a temporary copy of the repository.</b> The agent works in a git worktree, so it cannot change your files while you keep working.</li>
+          <li><b>Always run in the background.</b> The agent keeps running while you do other things.</li>
+          <li><b>MCP servers and removed tools.</b> Give the agent the tools of an MCP server, or take a few tools away without listing all the others.</li>
+        </ul>
+      </section>
+
+      <section id="d-refs">
+        <h2>References and scripts</h2>
+        <p>A <b>reference</b> is a file Claude reads only when it is needed. Use it for long material, such as an API guide or a style guide, so the skill itself stays short.</p>
+        <p>The line <b>"when to read it"</b> decides if Claude ever opens the file. Name the exact moment: "when you write the release notes" works. "Details" does not.</p>
+        <p>A file over 100 lines gets a table of contents, so Claude can jump to the part it needs. You can paste text, download a URL, or copy a file from your project.</p>
+        <p>A <b>script</b> is code the skill runs. Claude runs it and does not read it, so it costs almost no context and gives the same result every time. Use a script when the output has a fixed shape.</p>
+      </section>
+
+      <section id="d-checks">
+        <h2>The checks</h2>
+        <p>Jig checks your file as you type. The result is in the <b>Checks</b> tab. The number on the tab shows how many problems there are, and its color shows how bad they are.</p>
+        <table>
+          <thead><tr><th>Badge</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><th><span class="badge ok">0</span></th><td>No problems found.</td></tr>
+            <tr><th><span class="badge warn">2</span></th><td>Advice only, for example a missing Gotchas section. You can still save.</td></tr>
+            <tr><th><span class="badge err">1</span></th><td>Something is wrong, for example a bad name or a pointer to a file that does not exist. Save and Download are off until you fix it. Point at a button to see why.</td></tr>
+          </tbody>
+        </table>
+        <p>The check looks at the file. It cannot tell if the skill works well. After you save, run the skill on three real tasks and read what Claude did.</p>
+      </section>
+
+      <section id="d-save">
+        <h2>Save or download</h2>
+        <p>When you run Jig on your machine (<code>node scripts/ui.mjs</code>), <b>Save to project</b> writes the files into <code>.claude/skills</code> or <code>.claude/agents</code> in the folder where you started it. The page never shows your folder path.</p>
+        <p>When Jig runs as a web page, it cannot write to your disk. Use <b>Download .zip</b>. The zip has the right folders, so unzip it in the root of your project.</p>
+      </section>
+
+      <section id="d-cli">
+        <h2>Command line</h2>
+        <p>Everything the page does is also a command. Claude can run these for you.</p>
+<pre>node scripts/skill.mjs templates
+node scripts/skill.mjs new release-notes --template workflow
+node scripts/skill.mjs new-agent plan-builder --template implementer --skill workflow
+node scripts/skill.mjs add-reference .claude/skills/release-notes notes.md --when "you write the notes"
+node scripts/skill.mjs check .claude/skills/release-notes</pre>
+        <p>The README has a block for your <code>CLAUDE.md</code>. After you add it, you can ask Claude: "Create a skill that writes release notes from the git log."</p>
+      </section>
+
+      <section id="d-faq">
+        <h2>Common questions</h2>
+        <h3>Claude never uses my skill.</h3>
+        <p>The description must say when to use it. Claude reads only the name and the description to decide. Write what it makes and when to use it, in the words a user would say. Do not list the steps.</p>
+        <h3>Why can't my agent follow this skill?</h3>
+        <p>Only you start that skill, so an agent cannot load it. Change "Who can start it" to "You or Claude", or give the agent the steps another way.</p>
+        <h3>Why do I see a warning about <code>allowed-tools</code>?</h3>
+        <p>Your skill says it does not edit, but <code>allowed-tools</code> only skips the permission prompt. It does not block anything. Block the edit tools instead, or use an agent.</p>
+        <h3>I edited the file by hand and changed an option. Nothing happened.</h3>
+        <p>Jig does not overwrite your hand edits. Press <b>Reset</b> to rebuild the file from the form.</p>
+        <h3>Can I move or resize the panels?</h3>
+        <p>Yes. Drag the divider between the form and the file. Drag the handle at the bottom of the file panel to change its height. <b>Swap sides</b> puts the file on the other side. Your layout is remembered.</p>
+      </section>
+    </article>
+  </div>
+</div>
+
 <footer><span>MIT License</span><span>·</span><a href="https://github.com/YaroslavMatushevych/claude-skill-templates/blob/main/LICENSE" target="_blank" rel="noopener">License</a><span>·</span><a href="https://github.com/YaroslavMatushevych/claude-skill-templates" target="_blank" rel="noopener">Source</a></footer>
 <div id="tooltip" role="tooltip" hidden></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
