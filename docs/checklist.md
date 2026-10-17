@@ -42,5 +42,5 @@ Go through this list before you call a skill done. Each item has a reason. If yo
 
 ## Fit
 
-- [ ] The skill is the right tool. See [`choosing-a-type.md`](choosing-a-type.md).
+- [ ] The skill is the right tool. See the role table in `README.md`.
 - [ ] `node scripts/validate.mjs <folder>` passes.

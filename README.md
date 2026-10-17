@@ -1,40 +1,54 @@
 # claude-skill-templates
 
-Ten templates for Claude Code skills. Each one has a ready `SKILL.md` and short instructions that Claude reads before it writes your skill.
+Nine role skills for Claude Code. Copy one folder and use it. No blanks to fill.
 
-## Use it
+The roles are the ones that the most used skill sets share: ask, explore, plan, build, test, debug, review, verify, write.
 
-1. Copy this repo into your project, for example to `.claude/skill-templates/`.
-2. Add this to your `CLAUDE.md`:
+## Use one
 
-```markdown
-## Creating skills
-When I ask you to create or change a skill:
-1. Read `.claude/skill-templates/README.md`. Pick one template and tell me which, in one line.
-2. Read `templates/<name>/INSTRUCTIONS.md` and follow it.
-3. Copy `templates/<name>/SKILL.md` to `.claude/skills/<skill-name>/SKILL.md` and fill it in.
-4. Run `node .claude/skill-templates/scripts/validate.mjs .claude/skills/<skill-name>`.
-5. Test the skill on three real tasks before you say it is done.
+```bash
+cp -R templates/planner ~/.claude/skills/        # for all your projects
+cp -R templates/planner .claude/skills/          # for this project only
 ```
 
-3. Ask: "Create a skill that does X."
+Then call it: `/planner add a price filter to the search page`.
 
-## Which template
+## The roles
 
-| Template | Use it when | Example |
+| Role | What it does | Use it when |
 |---|---|---|
-| [`task-workflow`](templates/task-workflow/) | You repeat the same task in the same order. | Ticket to draft pull request |
-| [`plan-interview`](templates/plan-interview/) | Claude starts before it understands what you want. | Stress-test a design before coding |
-| [`write-doc`](templates/write-doc/) | A discussion is done and you want it on paper. | Spec, plan, summary |
-| [`review-change`](templates/review-change/) | You want a read-only second look. | Pull request review |
-| [`library-traps`](templates/library-traps/) | Claude gets one library wrong in the same way each time. | A date library with a known trap |
-| [`hard-rule`](templates/hard-rule/) | Claude skips one step when it is in a hurry. | No "done" without a test run |
-| [`session-handoff`](templates/session-handoff/) | A long session must continue in a fresh context. | End of day, or context is full |
-| [`find-cause`](templates/find-cause/) | Something is broken and the cause is unknown. | A failing build, a production error |
-| [`scaffold`](templates/scaffold/) | You create the same shape of files often. | A new component with its test |
-| [`skill-index`](templates/skill-index/) | You have many skills that you start by hand. | One entry point to find them |
+| [`clarifier`](templates/clarifier/) | Asks questions until a request is clear. | Claude starts before it understands you. |
+| [`explorer`](templates/explorer/) | Finds things in the code, returns paths and a short answer. Read-only. | "Where is X?" "How does Y work here?" |
+| [`planner`](templates/planner/) | Makes a plan of at most 10 small steps, each with a check. Read-only. | A change touches more than one file. |
+| [`implementer`](templates/implementer/) | Builds an approved plan. Check first, stops if it fails twice. | The plan is approved. |
+| [`tester`](templates/tester/) | Writes failing tests from acceptance criteria. | You want tests before code. |
+| [`debugger`](templates/debugger/) | Finds the cause of a failure by testing hypotheses. | Something is broken and you do not know why. |
+| [`reviewer`](templates/reviewer/) | Returns ranked problems and a verdict. Read-only. | You want a review before merge. |
+| [`verifier`](templates/verifier/) | Shows fresh evidence before it says "done". | Claude says "fixed" without proof. |
+| [`writer`](templates/writer/) | Writes a spec, plan or summary from what is known. | A discussion is done and you want it on paper. |
 
-Not sure a skill is the right tool? See [`docs/choosing-a-type.md`](docs/choosing-a-type.md). A rule that must hold every time is a hook, not a skill.
+A common order: `clarifier` then `planner`, `implementer`, `reviewer`, `verifier`. The others fit anywhere.
+
+## Make it yours
+
+Each folder has an `INSTRUCTIONS.md` with three short parts: **Change** (what to edit for your project), **Keep** (what makes the role work) and **Test** (how to check it).
+
+To let Claude adapt a role, add this to your `CLAUDE.md`:
+
+```markdown
+## Adapting skills
+When I ask you to adapt a skill from `skill-templates`:
+1. Read `templates/<role>/INSTRUCTIONS.md`.
+2. Change only what it lists under Change. Keep what it lists under Keep.
+3. Run `node scripts/validate.mjs <folder>` and fix every error.
+4. Run the skill on the task under Test and show me the result.
+```
+
+## Use a role as an agent
+
+An agent file can name a skill in its `skills:` field, and the agent follows it. `clarifier` and `writer` cannot be loaded this way, because they are started by you (`disable-model-invocation: true`).
+
+`explorer`, `planner` and `reviewer` already run in their own context (`context: fork`) and only have read tools. That tool list is the guard. A sentence in the prompt that says "do not edit" is only a request.
 
 ## Check a skill
 
@@ -47,9 +61,9 @@ It checks the name, the description, the length and the frontmatter. Node 18 or 
 ## Sources
 
 - Anthropic, "Skill authoring best practices" (platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
-- Anthropic, `skill-creator` in github.com/anthropics/skills
+- Anthropic, `skills` repo, including `skill-creator` (github.com/anthropics/skills)
 - Claude Code docs, skills (code.claude.com/docs)
-- Jesse Vincent, "Superpowers" and its `writing-skills` skill (github.com/obra/superpowers)
+- Jesse Vincent, "Superpowers" (github.com/obra/superpowers)
 - Thariq, "Lessons from Building Claude Code: How We Use Skills", March 2026
 - Simon Willison, "Claude Skills are awesome, maybe a bigger deal than MCP", October 2025
 

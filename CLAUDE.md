@@ -1,16 +1,14 @@
 # Instructions for Claude
 
-This repo holds templates for Claude Code skills. You are probably here because a user asked you to create a skill.
+This repo holds nine role skills: `clarifier`, `explorer`, `planner`, `implementer`, `tester`, `debugger`, `reviewer`, `verifier`, `writer`.
 
-1. Read `docs/choosing-a-type.md`. If a hook, a `CLAUDE.md` rule or a subagent fits better, say so and stop.
-2. Pick one template from the table in `README.md`. Tell the user which, and why, in one line.
-3. Read `templates/<name>/INSTRUCTIONS.md` and follow it.
-4. Copy `templates/<name>/SKILL.md` into the user's skills folder. Replace every `<...>` placeholder. Delete every `TEMPLATE:` line.
-5. Run `node scripts/validate.mjs <skill-folder>`. Fix every error.
-6. Go through `docs/checklist.md`.
-7. Run the skill on three real tasks. Read the whole transcript. Fix the skill, not the task.
+When the user asks you to adapt a role:
 
-Rules for this repo:
+1. Read `templates/<role>/INSTRUCTIONS.md`.
+2. Change only what it lists under **Change**. Keep what it lists under **Keep**.
+3. Run `node scripts/validate.mjs <folder>`. Fix every error.
+4. Run the skill on the task under **Test**. Read the whole transcript. Fix the skill, not the task.
 
-- Short sentences, simple words, no em-dashes.
-- A new template needs a `SKILL.md`, an `INSTRUCTIONS.md` and a passing validate run.
+When the user asks for a new role, check `docs/checklist.md` first. A new role needs a `SKILL.md` that works as it is, and an `INSTRUCTIONS.md` with Change, Keep and Test. It must pass `node scripts/validate.mjs`.
+
+Rules for this repo: short sentences, simple words, no em-dashes, no `<placeholder>` text in a `SKILL.md`.
