@@ -1,10 +1,10 @@
 ---
-name: my-router
+name: my-skill-index
 description: Show the user-started skills and pick the right one. Use when the user asks which skill to use or what skills exist.
 disable-model-invocation: true
 argument-hint: [what you want to do]
 ---
-TEMPLATE: Replace every <...>. Delete every TEMPLATE line. The table must list every user-started skill on disk, and no others. A router that lists a skill that is gone, or misses a new one, gives wrong answers.
+TEMPLATE: Replace every <...>. Delete every TEMPLATE line. The table must list every user-started skill on disk, and no others. An index that lists a skill that is gone, or misses a new one, gives wrong answers.
 
 The user wants to: $ARGUMENTS
 

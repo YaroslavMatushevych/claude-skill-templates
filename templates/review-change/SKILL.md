@@ -1,5 +1,5 @@
 ---
-name: my-review
+name: my-review-change
 description: Review [artifact] and return a ranked list of problems. Use when asked to review [artifact]. Read-only.
 argument-hint: [artifact id or path]
 allowed-tools: Read Grep Glob Bash(git diff *) Bash(git log *)

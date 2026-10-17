@@ -1,5 +1,5 @@
 ---
-name: my-handoff
+name: my-session-handoff
 description: Write a handoff note so a fresh session can continue the work. Use when the user wants to end or restart a long session.
 disable-model-invocation: true
 argument-hint: [what the next session will do]

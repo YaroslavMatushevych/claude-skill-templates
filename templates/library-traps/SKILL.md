@@ -1,5 +1,5 @@
 ---
-name: my-reference
+name: my-library-traps
 description: Usage rules and known traps for [library or tool]. Use when writing or changing code that uses [library or tool].
 ---
 TEMPLATE: Replace every <...>. Delete every TEMPLATE line. Write only what Claude does not already know. If the model knows it, leave it out.

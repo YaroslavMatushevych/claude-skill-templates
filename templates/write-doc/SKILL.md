@@ -1,5 +1,5 @@
 ---
-name: my-synthesis
+name: my-write-doc
 description: Write a [document type] from the current conversation. Use when the user asks for the [document type] after the discussion is done.
 disable-model-invocation: true
 argument-hint: [output path]

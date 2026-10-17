@@ -1,5 +1,5 @@
 ---
-name: my-interview
+name: my-plan-interview
 description: Interview the user until a plan or design is clear. Use only when the user asks to stress-test a plan before any work starts.
 disable-model-invocation: true
 argument-hint: [plan or topic]

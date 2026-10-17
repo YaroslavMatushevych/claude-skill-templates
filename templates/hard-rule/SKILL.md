@@ -1,5 +1,5 @@
 ---
-name: my-discipline
+name: my-hard-rule
 description: Use when [the moment], before you [the claim or the action]. Applies to [the kind of work].
 ---
 TEMPLATE: Replace every <...>. Delete every TEMPLATE line. One skill, one rule. If you have two rules, write two skills.

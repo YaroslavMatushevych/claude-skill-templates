@@ -1,5 +1,5 @@
 ---
-name: my-diagnosis
+name: my-find-cause
 description: Find the cause of a bug or failure by testing hypotheses. Use when something is broken and the cause is unknown.
 argument-hint: [symptom]
 ---

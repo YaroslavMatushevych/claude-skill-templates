@@ -1,5 +1,5 @@
 ---
-name: my-generator
+name: my-scaffold
 description: Create a new [thing] in the standard shape with the bundled script. Use when asked to add a new [thing].
 argument-hint: [name]
 ---

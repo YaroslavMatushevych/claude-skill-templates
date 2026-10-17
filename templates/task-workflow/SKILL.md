@@ -1,5 +1,5 @@
 ---
-name: my-procedure
+name: my-task-workflow
 description: Turn [input] into [output]. Use only when asked to [trigger].
 argument-hint: [input]
 ---
