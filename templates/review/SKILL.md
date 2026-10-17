@@ -1,8 +1,8 @@
 ---
 name: review
-description: Review a change or a document against clear criteria and return ranked findings with a verdict. Read-only. Use when asked to review something.
+description: Review a change or a document against clear criteria and return ranked findings with a verdict, without editing files. Use when asked to review something.
 argument-hint: [what to review]
-allowed-tools: Read Grep Glob Bash(git diff *) Bash(git log *) Bash(git show *)
+disallowed-tools: Write Edit NotebookEdit
 context: fork
 ---
 Review: $ARGUMENTS
@@ -26,7 +26,7 @@ End with one line: `Verdict: approve` or `Verdict: changes needed`. If you find 
 
 ## Rules
 
-- Do not edit any file.
+- Do not edit any file. Run only commands that read, such as `git diff` and `git log`.
 - Report only what you can point to. Do not report taste.
 
 ## Gotchas

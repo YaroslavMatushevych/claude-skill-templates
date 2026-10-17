@@ -20,7 +20,7 @@ test("templates lists every template with its description", () => {
   const r = run(["templates"], tmp());
   assert.equal(r.status, 0);
   for (const t of ["workflow", "investigate", "generate", "review", "knowledge", "guardrail"]) {
-    assert.match(r.stdout, new RegExp(`^${t}\\s`, "m"));
+    assert.match(r.stdout, new RegExp(`^\\s+${t}\\s`, "m"));
   }
 });
 

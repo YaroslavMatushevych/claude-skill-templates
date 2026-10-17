@@ -1,8 +1,8 @@
 ---
 name: investigate
-description: Find out where something is or why something happens, and answer with proof. Read-only. Use when asked where, how or why about the code or a failure.
+description: Find out where something is or why something happens, and answer with proof, without editing files. Use when asked where, how or why about the code or a failure.
 argument-hint: [question or symptom]
-allowed-tools: Read Grep Glob
+disallowed-tools: Write Edit NotebookEdit
 context: fork
 ---
 Question: $ARGUMENTS
@@ -15,7 +15,7 @@ Question: $ARGUMENTS
 
 ## Rules
 
-- Do not edit anything.
+- Do not edit anything. Run only commands that read.
 - Every claim has proof. No proof, no claim.
 
 ## Gotchas

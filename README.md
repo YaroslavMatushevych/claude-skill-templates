@@ -1,64 +1,110 @@
 # claude-skill-templates
 
-A skill constructor for Claude Code. It builds a skill from a template, adds references and scripts, and checks the result. Claude can run it for you.
-
-## Set up
+Build Claude Code skills and agents faster. Pick a template, fill in a few lines, check the result. Use the web UI, the command line, or let Claude run it for you.
 
 ```bash
 git clone https://github.com/YaroslavMatushevych/claude-skill-templates ~/skill-templates
+cd ~/your-project
+node ~/skill-templates/scripts/ui.mjs
 ```
 
-Add this to your `CLAUDE.md` (project or `~/.claude/CLAUDE.md`):
+The UI opens in your browser. It saves into `.claude/skills` or `.claude/agents` of the folder you started it in. Node 18 or newer. No dependencies.
+
+## What do you want to build?
+
+Start here. Find your situation, then use the template.
+
+| Your situation | Build this | Template |
+|---|---|---|
+| I do the same task in the same order every time. Release, ticket to pull request, dependency update. | A skill | [`workflow`](templates/workflow/) |
+| I keep asking "where is X?", "how does Y work?", "why does Z fail?" | A skill, or a cheap agent | [`investigate`](templates/investigate/) or [`explorer`](agent-templates/explorer/) |
+| I want a plan, a spec, a summary or a pull request description in the same format every time. | A skill | [`generate`](templates/generate/) |
+| I want a second opinion before merge. | A skill, or a read-only agent | [`review`](templates/review/) or [`reviewer`](agent-templates/reviewer/) |
+| Claude makes the same mistake with our date library, API or build tool. | A skill | [`knowledge`](templates/knowledge/) |
+| Claude says "done" without running the tests. | A skill | [`guardrail`](templates/guardrail/) |
+| I want to approve the approach before any code is written. | An agent | [`planner`](agent-templates/planner/) |
+| I want an approved plan built without watching every step. | An agent | [`implementer`](agent-templates/implementer/) |
+| I want tests written before the code. | An agent | [`tester`](agent-templates/tester/) |
+
+**Skill or agent?** A skill is a procedure that Claude follows inside your session. An agent is a separate worker with its own context and its own tool list. Use a skill for "how to do this". Use an agent when the work is large, or when it must not be able to change anything. An agent can follow a skill: name it in the agent's `skills:` line.
+
+A common chain: `explorer` finds the code, `planner` writes a plan, you approve it, `tester` writes the failing tests, `implementer` builds it, `reviewer` checks it.
+
+## Skill templates
+
+| Template | Purpose | Use it when |
+|---|---|---|
+| [`workflow`](templates/workflow/) | Do a repeatable task in fixed steps, with a check on each step. | You repeat the same task. |
+| [`investigate`](templates/investigate/) | Answer "where", "how" or "why" with proof, without editing. | You need an answer with evidence. |
+| [`generate`](templates/generate/) | Make an output in a fixed shape from known facts. You start it. | You want the same format every time. |
+| [`review`](templates/review/) | Ranked findings and a verdict, without editing. | You want a review before merge. |
+| [`knowledge`](templates/knowledge/) | Your traps and rules for one tool, library or area. No steps. | Claude repeats a mistake with it. |
+| [`guardrail`](templates/guardrail/) | One rule to follow before a claim or an action. | Claude skips a step when in a hurry. |
+
+`knowledge` is a frame. It has no content until you list your own traps and rules in it. The other five work as they are.
+
+## Agent templates
+
+| Template | Tools | Model | Use it when |
+|---|---|---|---|
+| [`explorer`](agent-templates/explorer/) | Read, Grep, Glob | haiku | You need the right files before you answer or plan. Searching is cheap work. |
+| [`planner`](agent-templates/planner/) | Read, Grep, Glob | sonnet | A change touches more than one file and you want to approve a plan first. |
+| [`implementer`](agent-templates/implementer/) | Read, Edit, Write, Grep, Glob, Bash | sonnet | A plan is approved. It is the only template that can edit. |
+| [`reviewer`](agent-templates/reviewer/) | Read, Grep, Glob | sonnet | You want a review that cannot change anything. You pass it the diff. |
+| [`tester`](agent-templates/tester/) | Read, Edit, Write, Grep, Glob, Bash | sonnet | You have acceptance criteria and want failing tests first. |
+
+Every template has an `INSTRUCTIONS.md` with **Change** (what to edit for your project), **Keep** (what makes it work) and **Test** (how to check it).
+
+## Build with the UI
+
+`node scripts/ui.mjs` (add `--dir <project>` to build for another folder, `--port <n>` to change the port).
+
+1. Pick a template. The page shows when to use it and what to change.
+2. Give it a name and a description. The draft updates as you type. You can edit the whole file.
+3. For a skill, add references and scripts. A reference is pasted text, a URL, or a file from your project. You must say when Claude should read it. For an agent, choose the model, the tools and the skills.
+4. The checks update as you work. Save when there are no errors.
+
+The server listens on `127.0.0.1` only, refuses requests from other sites, and writes only inside the project folder.
+
+## Build with the command line
+
+| Command | What it does |
+|---|---|
+| `templates [skill\|agent]` | Lists the templates. |
+| `new <name> --template <t>` | Creates a skill from a template. Add `--description "..."`, `--dir <folder>`. |
+| `new-agent <name> --template <t>` | Creates an agent. Add `--skill <name>`, `--model <m>`, `--tools "Read, Grep"`, `--max-turns <n>`. |
+| `add-reference <skill> <file-or-url> --when "..."` | Adds a reference and a line that says when to read it. Adds a table of contents to a long file. |
+| `add-script <skill> <file>` | Adds a script and a line that says to run it, not read it. |
+| `check <skill-folder-or-agent-file>` | Checks the name, description, length, pointers, tools and model. |
+
+All run as `node scripts/skill.mjs <command>`.
+
+## Let Claude build it
+
+Add this to your `CLAUDE.md`:
 
 ```markdown
-## Building skills
-To create or change a skill, use the constructor in `~/skill-templates`:
+## Building skills and agents
+To create or change a skill or an agent, use the constructor in `~/skill-templates`:
 1. `node ~/skill-templates/scripts/skill.mjs templates` lists the templates. Pick one that fits.
-2. `node ~/skill-templates/scripts/skill.mjs new <name> --template <template> --description "<what it makes. Use when ...>"`
-3. Edit `SKILL.md`. The command prints what to change and what to keep.
-4. For each long document the skill needs, run `node ~/skill-templates/scripts/skill.mjs add-reference <skill-folder> <file-or-url> --when "<when to read it>"`.
-5. Run `node ~/skill-templates/scripts/skill.mjs check <skill-folder>` and fix every error.
-6. Run the skill on three real tasks before you say it is done.
+2. `node ~/skill-templates/scripts/skill.mjs new <name> --template <template> --description "<what it makes. Use when ...>"` for a skill, or `new-agent` for an agent.
+3. Edit the file. The command prints what to change and what to keep.
+4. For each long document, run `add-reference <skill-folder> <file-or-url> --when "<when to read it>"`.
+5. Run `check <skill-folder-or-agent-file>` and fix every error.
+6. Run it on three real tasks before you say it is done.
 ```
 
 Then ask: "Create a skill that writes release notes from the git log."
 
-## The commands
+## Traps this repo already handles
 
-| Command | What it does |
-|---|---|
-| `templates` | Lists the templates and what each is for. |
-| `new <name> --template <t>` | Creates `.claude/skills/<name>/SKILL.md` from a template. Sets the name. Add `--description "..."` to set the description and `--dir <folder>` to change where it is created. Prints what to **change** and what to **keep**. |
-| `add-reference <skill> <file-or-url> --when "..."` | Copies a file, or downloads a URL, into `references/`. Adds a line to `SKILL.md` that says when to read it. Adds a table of contents to a long file. |
-| `add-script <skill> <file>` | Copies a script into `scripts/`. Adds a line that says to run it, not read it. Add `--read` if Claude must read it. |
-| `check <skill>` | Checks the name, the description, the length, the pointers and the references. |
+Each of these was tested, and `check` warns about them.
 
-All commands run as `node scripts/skill.mjs <command>`. Node 18 or newer. No dependencies.
-
-Why `--when` is required: the words in the pointer decide when Claude opens the file. A vague pointer means Claude never reads it.
-
-## The templates
-
-Six templates. Each is for a different purpose, and each works as it is. Each has an `INSTRUCTIONS.md` with **Change**, **Keep** and **Test**.
-
-| Template | Purpose | Use it when |
-|---|---|---|
-| [`workflow`](templates/workflow/) | Do a repeatable task in fixed steps, with a check on each step. | You do the same task in the same order again and again. Example: ticket to pull request. |
-| [`investigate`](templates/investigate/) | Answer "where", "how" or "why" with proof. Read-only. | You ask where something is, how it works, or why it fails. |
-| [`generate`](templates/generate/) | Make an output in a fixed shape from known facts. | You want a plan, spec, summary or message in the same format every time. |
-| [`review`](templates/review/) | Check something against criteria. Ranked findings and a verdict. Read-only. | You want a second opinion before merge. |
-| [`knowledge`](templates/knowledge/) | Your traps and rules for one tool, library or area. No steps. | Claude makes the same mistake with it in more than one session. |
-| [`guardrail`](templates/guardrail/) | One rule that must be followed before a claim or an action. | Claude says "done" without proof, or skips a step in a hurry. |
-
-Not sure which one? Ask what you want from the skill: do a task (`workflow`), find out (`investigate`), produce something (`generate`), judge something (`review`), know something (`knowledge`) or hold a rule (`guardrail`).
-
-To use a template as it is, without the constructor: `cp -R templates/workflow ~/.claude/skills/`.
-
-## Use a skill as an agent
-
-An agent file can name a skill in its `skills:` field, and the agent follows it. `generate` cannot be loaded this way, because you start it (`disable-model-invocation: true`).
-
-`investigate` and `review` run in their own context (`context: fork`) and have read tools only. The tool list is the guard. A sentence that says "do not edit" is only a request.
+- **`allowed-tools` in a skill does not restrict anything.** It only pre-approves tools. A skill with `allowed-tools: Read Grep Glob` still wrote a file. To block edits use `disallowed-tools: Write Edit NotebookEdit`. A shell command can still write a file, so for a hard guarantee use an agent.
+- **A plain `tools:` list in an agent is enforced.** An agent with `tools: Read, Grep, Glob` has no Write and no Bash.
+- **A pattern inside an agent's `tools:` does not limit the tool.** An agent with `Bash(git log *)` still ran `ls -la`. Use the plain name, and know that it allows every use of it.
+- **A skill with `disable-model-invocation: true` cannot be loaded into an agent.** `generate` is one of these.
+- **A vague pointer means Claude never opens the file.** That is why `add-reference` asks you to say when to read it.
 
 ## Test
 
@@ -66,13 +112,4 @@ An agent file can name a skill in its `skills:` field, and the agent follows it.
 npm test
 ```
 
-## Sources
-
-- Anthropic, "Skill authoring best practices" (platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
-- Anthropic, `skills` repo, including `skill-creator` (github.com/anthropics/skills)
-- Claude Code docs, skills (code.claude.com/docs)
-- Jesse Vincent, "Superpowers" (github.com/obra/superpowers)
-- Thariq, "Lessons from Building Claude Code: How We Use Skills", March 2026
-- Simon Willison, "Claude Skills are awesome, maybe a bigger deal than MCP", October 2025
-
-MIT license. The checklist for a good skill is in [`docs/checklist.md`](docs/checklist.md).
+The checklist for a good skill is in [`docs/checklist.md`](docs/checklist.md). MIT license.

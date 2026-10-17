@@ -33,6 +33,11 @@ Go through this list before you call a skill done. Each item has a reason. If yo
 - [ ] State that must survive an upgrade is stored outside the skill folder.
 - [ ] No paths or code snippets that go out of date fast. Point to the file instead.
 
+## Tool limits
+
+- [ ] If the skill must not edit files, it uses `disallowed-tools: Write Edit NotebookEdit`. The field `allowed-tools` only pre-approves tools. It blocks nothing.
+- [ ] If it must not run commands that change files, it is an agent with a plain `tools:` list and no `Bash`. A pattern such as `Bash(git log *)` in an agent's `tools:` does not limit Bash.
+
 ## Test
 
 - [ ] You ran the task once without the skill and wrote down where Claude went wrong.
