@@ -1,7 +1,7 @@
 import { zip } from "/zip.js";
 
 const $ = (id) => document.getElementById(id);
-const state = { kind: "skill", data: null, template: null, dirty: false, refs: [], scripts: [], timer: null, seq: 0, last: null, tab: "file" };
+const state = { agentSkills: new Set(), kind: "skill", data: null, template: null, dirty: false, refs: [], scripts: [], timer: null, seq: 0, last: null, tab: "file" };
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const WRITE_TOOLS = ["Edit", "Write", "NotebookEdit", "Bash"];
 
@@ -12,6 +12,9 @@ async function api(path, body) {
   return json;
 }
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+// Small, safe inline markdown for the template notes: `code` and **bold**. The text is escaped first.
+const md = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+const BLOCKABLE = ["Write", "Edit", "NotebookEdit", "Bash", "WebFetch", "WebSearch"];
 const defaultDir = () => (state.kind === "skill" ? ".claude/skills" : ".claude/agents");
 
 function toast(message) {
@@ -35,11 +38,17 @@ function checkPayload() {
 function renderPayload() {
   const p = checkPayload();
   delete p.text; delete p.references; delete p.scripts;
+  if (state.kind === "skill") {
+    p.userStarted = $("start-manual").getAttribute("aria-checked") === "true";
+    p.model = $("smodel").value;
+    p.fork = $("fork").checked;
+    p.disallowed = [...document.querySelectorAll("#blocked input:checked")].map((i) => i.value);
+  }
   if (state.kind === "agent") {
     p.model = $("model").value;
     p.maxTurns = $("maxTurns").value;
     p.tools = [...document.querySelectorAll("#tools input:checked")].map((i) => i.value);
-    p.skills = $("skills").value.split(",").map((s) => s.trim()).filter(Boolean);
+    p.skills = [...state.agentSkills];
   }
   return p;
 }
@@ -50,25 +59,13 @@ function setKind(kind) {
   state.kind = kind;
   for (const k of ["skill", "agent"]) $(`tab-${k}`).setAttribute("aria-selected", String(k === kind));
   $("agent-options").hidden = kind !== "agent";
+  $("skill-options").hidden = kind !== "skill";
   $("step-3").hidden = kind !== "skill";
   $("outDir").value = defaultDir();
   state.refs = []; state.scripts = []; renderRefs();
-  const chips = (t) => {
-    const out = [];
-    if (kind === "skill") {
-      if (t.userStarted) out.push('<span class="chip accent">you start it</span>');
-      else out.push('<span class="chip">Claude starts it</span>');
-      if (/without editing|read-only/i.test(t.description)) out.push('<span class="chip accent">no edits</span>');
-    } else {
-      const tools = t.tools.split(",").map((x) => x.trim()).filter(Boolean);
-      out.push(`<span class="chip accent">${esc(t.model || "inherit")}</span>`);
-      out.push(`<span class="chip">${tools.length} tools</span>`);
-      if (!tools.some((x) => WRITE_TOOLS.includes(x))) out.push('<span class="chip accent">read-only</span>');
-    }
-    return out.join("");
-  };
+  const facts = (t) => (kind === "agent" ? `<div class="facts">${esc(t.model || "inherit")} · ${esc(t.tools)}</div>` : "");
   $("templates").innerHTML = state.data[kind]
-    .map((t) => `<button class="tpl" data-t="${t.name}" aria-pressed="false"><b>${t.name}</b><p>${esc(t.purpose || t.description)}</p><div class="chips">${chips(t)}</div></button>`)
+    .map((t) => `<button class="tpl" data-t="${t.name}" aria-pressed="false"><b>${t.name}</b><p>${md(t.purpose || t.description)}</p>${facts(t)}</button>`)
     .join("");
   $("templates").querySelectorAll(".tpl").forEach((b) => b.addEventListener("click", () => pick(b.dataset.t)));
   pick(state.data[kind][0].name, true);
@@ -80,9 +77,16 @@ async function pick(name, force) {
   document.querySelectorAll(".tpl").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.t === name)));
   const t = state.data[state.kind].find((x) => x.name === name);
   $("guide-body").innerHTML = [["Use when", t.useWhen], ["Change", t.change], ["Keep", t.keep], ["Test", t.test]]
-    .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
+    .filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${md(v)}</dd>`).join("");
+  if (state.kind === "skill") {
+    setStart(t.userStarted);
+    $("smodel").value = ""; $("fork").checked = t.fork;
+    const blocked = new Set(t.disallowed);
+    document.querySelectorAll("#blocked input").forEach((i) => { i.checked = blocked.has(i.value); });
+  }
   if (state.kind === "agent") {
-    $("model").value = ""; $("maxTurns").value = ""; $("skills").value = "";
+    $("model").value = ""; $("maxTurns").value = "";
+    state.agentSkills = new Set(t.skills); renderSkillPick();
     const have = new Set(t.tools.split(",").map((x) => x.trim()));
     document.querySelectorAll("#tools input").forEach((i) => { i.checked = have.has(i.value); });
   }
@@ -236,6 +240,33 @@ async function doSave() {
   }
 }
 
+// The skills an agent can follow: skill templates that Claude may start, plus the skills already in the project.
+function skillChoices() {
+  const out = new Map();
+  for (const t of state.data.skill) out.set(t.name, { name: t.name, userStarted: t.userStarted, tag: "template" });
+  for (const p of state.data.projectSkills ?? []) out.set(p.name, { name: p.name, userStarted: p.userStarted, tag: "in your project" });
+  for (const n of state.agentSkills) if (!out.has(n)) out.set(n, { name: n, userStarted: false, tag: "custom" });
+  return [...out.values()];
+}
+
+function renderSkillPick() {
+  $("skillpick").innerHTML = skillChoices().map((c) => {
+    const off = c.userStarted && !state.agentSkills.has(c.name);
+    const title = c.userStarted ? "You start this skill, so an agent cannot load it." : c.tag;
+    return `<label title="${esc(title)}"${off ? ' style="opacity:.5"' : ""}><input type="checkbox" value="${esc(c.name)}"${state.agentSkills.has(c.name) ? " checked" : ""}${off ? " disabled" : ""}>${esc(c.name)}</label>`;
+  }).join("");
+}
+
+function setStart(manual) {
+  $("start-auto").setAttribute("aria-checked", String(!manual));
+  $("start-manual").setAttribute("aria-checked", String(manual));
+}
+
+function optionChanged() {
+  if (state.dirty) { toast("You edited the file by hand, so this option did not change it. Press Reset to apply it."); return; }
+  regenerate();
+}
+
 function setTab(tab) {
   state.tab = tab;
   for (const t of ["file", "final", "checks"]) {
@@ -250,8 +281,23 @@ function wire() {
   for (const t of ["file", "final", "checks"]) $(`pt-${t}`).onclick = () => setTab(t);
   $("name").addEventListener("input", () => { state.dirty ? patchDraft() : regenerate(); scheduleCheck(); });
   $("description").addEventListener("input", () => { state.dirty ? patchDraft() : regenerate(); scheduleCheck(); });
-  for (const id of ["model", "maxTurns", "skills"]) $(id).addEventListener("input", () => regenerate());
-  $("tools").addEventListener("change", () => regenerate());
+  for (const id of ["model", "maxTurns", "smodel"]) $(id).addEventListener("input", optionChanged);
+  $("fork").addEventListener("change", optionChanged);
+  $("start-auto").onclick = () => { setStart(false); optionChanged(); };
+  $("start-manual").onclick = () => { setStart(true); optionChanged(); };
+  $("tools").addEventListener("change", optionChanged);
+  $("skillpick").addEventListener("change", (e) => {
+    e.target.checked ? state.agentSkills.add(e.target.value) : state.agentSkills.delete(e.target.value);
+    optionChanged();
+  });
+  const addSkill = () => {
+    const n = $("skill-custom").value.trim();
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(n)) { toast("Use lowercase letters, digits and hyphens, for example release-notes."); return; }
+    state.agentSkills.add(n); $("skill-custom").value = ""; renderSkillPick(); optionChanged();
+  };
+  $("skill-add").onclick = addSkill;
+  $("skill-custom").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } });
+  $("blocked").addEventListener("change", optionChanged);
   $("outDir").addEventListener("input", scheduleCheck);
   $("draft").addEventListener("input", () => { state.dirty = true; scheduleCheck(); });
   $("reset").onclick = () => regenerate(true);
@@ -287,6 +333,7 @@ function wire() {
     return;
   }
   $("tools").innerHTML = state.data.tools.map((t) => `<label><input type="checkbox" value="${t}">${t}</label>`).join("");
+  $("blocked").innerHTML = BLOCKABLE.map((t) => `<label><input type="checkbox" value="${t}">${t}</label>`).join("");
   $("primary").textContent = state.data.hosted ? "Download .zip" : "Save to project";
   $("download").hidden = !!state.data.hosted;
   wire();

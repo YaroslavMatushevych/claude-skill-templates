@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -80,4 +80,40 @@ test(".vercelignore does not exclude the templates", async () => {
   const { readFileSync } = await import("node:fs");
   const lines = readFileSync(join(HERE, "..", ".vercelignore"), "utf8").split("\n").map((l) => l.trim()).filter(Boolean);
   for (const l of lines) assert.doesNotMatch(l, /\*|templates|agent-templates|scripts|api|public/, `\`${l}\` could remove files the app needs`);
+});
+
+test("skill options change the frontmatter: who starts it, model, own context and blocked tools", async () => {
+  const hostedSvc = createService({ hosted: true });
+  const on = (await hostedSvc.render({ ...base, userStarted: true, model: "haiku", fork: true, disallowed: ["Write", "Edit"] })).text;
+  assert.match(on, /^disable-model-invocation: true$/m);
+  assert.match(on, /^model: haiku$/m);
+  assert.match(on, /^context: fork$/m);
+  assert.match(on, /^disallowed-tools: Write Edit$/m);
+  // the generate template is user-started by default, and the option can switch it off
+  const off = (await hostedSvc.render({ kind: "skill", template: "generate", name: "x-skill", userStarted: false })).text;
+  assert.doesNotMatch(off, /disable-model-invocation/);
+  // review blocks edits by default, and the option can clear the list
+  const cleared = (await hostedSvc.render({ kind: "skill", template: "review", name: "x-skill", disallowed: [] })).text;
+  assert.doesNotMatch(cleared, /disallowed-tools/);
+  assert.throws(() => hostedSvc.render({ ...base, disallowed: ["Nope"] }), /not a tool name/);
+});
+
+test("the template list says what each skill template does by default", () => {
+  const t = createService({ hosted: true }).templates();
+  const review = t.skill.find((x) => x.name === "review");
+  assert.deepEqual(review.disallowed, ["Write", "Edit", "NotebookEdit"]);
+  assert.equal(t.skill.find((x) => x.name === "generate").userStarted, true);
+  assert.equal(t.skill.find((x) => x.name === "investigate").fork, true);
+  assert.deepEqual(t.projectSkills, []);
+});
+
+test("local mode lists the skills in the project, hosted mode never does", () => {
+  const dir = mkdtempSync(join(tmpdir(), "proj-"));
+  mkdirSync(join(dir, ".claude/skills/mine"), { recursive: true });
+  writeFileSync(join(dir, ".claude/skills/mine/SKILL.md"), "---\nname: mine\ndescription: A skill. Use when asked.\n---\nBody\n");
+  mkdirSync(join(dir, ".claude/skills/manual"), { recursive: true });
+  writeFileSync(join(dir, ".claude/skills/manual/SKILL.md"), "---\nname: manual\ndescription: Another. Use when asked.\ndisable-model-invocation: true\n---\nBody\n");
+  assert.deepEqual(createService({ hosted: false, project: dir }).templates().projectSkills, [{ name: "manual", userStarted: true }, { name: "mine", userStarted: false }]);
+  assert.deepEqual(createService({ hosted: true, project: dir }).templates().projectSkills, []);
+  rmSync(dir, { recursive: true });
 });

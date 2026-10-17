@@ -95,6 +95,8 @@ export function templateInfo(kind, name) {
     maxTurns: fields.maxTurns ?? "",
     skills: lists.skills ?? [],
     userStarted: fields["disable-model-invocation"] === "true",
+    fork: fields.context === "fork",
+    disallowed: (fields["disallowed-tools"] ?? "").split(/\s+/).filter(Boolean),
     purpose: instructionField(instructions, "Purpose"),
     useWhen: instructionField(instructions, "Use when"),
     change: instructionField(instructions, "Change"),
@@ -118,13 +120,23 @@ function checkDescription(description) {
   if (/\n/.test(description)) bad("Write the description on one line.");
 }
 
-export function renderSkill({ template, name, description }) {
+export function renderSkill({ template, name, description, userStarted, model, fork, disallowed }) {
   checkName(name);
   let text = templateInfo("skill", template).text;
   text = setField(text, "name", name);
   if (description) {
     checkDescription(description);
     text = setField(text, "description", description);
+  }
+  if (typeof userStarted === "boolean") text = setField(text, "disable-model-invocation", userStarted ? "true" : null);
+  if (model) {
+    if (!MODELS.has(model)) bad(`The model must be one of: ${[...MODELS].join(", ")}.`);
+    text = setField(text, "model", model);
+  }
+  if (typeof fork === "boolean") text = setField(text, "context", fork ? "fork" : null);
+  if (Array.isArray(disallowed)) {
+    for (const t of disallowed) if (!KNOWN_TOOLS.has(t)) bad(`\`${t}\` is not a tool name that Claude Code knows.`);
+    text = setField(text, "disallowed-tools", disallowed.length ? disallowed.join(" ") : null);
   }
   return text;
 }

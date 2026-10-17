@@ -1,6 +1,6 @@
 // The builder service. The local server (ui.mjs) and the Vercel functions (api/*.mjs) both use it.
 // Hosted mode never touches the project folder, never reads local files and never fetches URLs.
-import { mkdtempSync, rmSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, resolve, sep, relative } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -8,6 +8,7 @@ import {
   addReference, addScript, checkSkill, checkAgent, fetchUrl, slug,
 } from "./lib.mjs";
 
+const NAME_OK = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 export const LIMITS = { body: 1_000_000, references: 10, scripts: 5, file: 300_000 };
 
 const bad = (m) => {
@@ -22,7 +23,7 @@ function normalize(b) {
   if (!["skill", "agent"].includes(b.kind)) bad("Choose a skill or an agent.");
   if (!str(b.template)) bad("Pick a template.");
   for (const key of ["name", "description", "outDir", "model", "text"]) if (b[key] !== undefined && typeof b[key] !== "string") bad(`\`${key}\` must be text.`);
-  for (const key of ["references", "scripts", "tools", "skills"]) if (b[key] !== undefined && !Array.isArray(b[key])) bad(`\`${key}\` must be a list.`);
+  for (const key of ["references", "scripts", "tools", "skills", "disallowed"]) if (b[key] !== undefined && !Array.isArray(b[key])) bad(`\`${key}\` must be a list.`);
   if ((b.references ?? []).length > LIMITS.references) bad(`Use at most ${LIMITS.references} references.`);
   if ((b.scripts ?? []).length > LIMITS.scripts) bad(`Use at most ${LIMITS.scripts} scripts.`);
   const big = [...(b.references ?? []), ...(b.scripts ?? [])].find((x) => typeof x?.content === "string" && x.content.length > LIMITS.file);
@@ -31,13 +32,27 @@ function normalize(b) {
   return b;
 }
 
+function projectSkills(project) {
+  const dir = project ? join(project, ".claude", "skills") : null;
+  if (!dir || !existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((n) => NAME_OK.test(n) && existsSync(join(dir, n, "SKILL.md")))
+    .map((n) => ({ name: n, userStarted: /^disable-model-invocation:\s*true\s*$/m.test(readFileSync(join(dir, n, "SKILL.md"), "utf8").split("\n---")[0]) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function createService({ hosted = false, project = null } = {}) {
   const renderDraft = (b) => {
     normalize(b);
     const name = str(b.name) ?? "my-skill";
     return b.kind === "agent"
       ? renderAgent({ template: b.template, name, description: str(b.description), skills: b.skills ?? [], model: str(b.model), tools: b.tools?.length ? b.tools : undefined, maxTurns: str(b.maxTurns) })
-      : renderSkill({ template: b.template, name, description: str(b.description) });
+      : renderSkill({
+          template: b.template, name, description: str(b.description),
+          userStarted: typeof b.userStarted === "boolean" ? b.userStarted : undefined,
+          model: str(b.model), fork: typeof b.fork === "boolean" ? b.fork : undefined,
+          disallowed: Array.isArray(b.disallowed) ? b.disallowed : undefined,
+        });
   };
 
   // Build in a temp folder to check, or in the project folder to save.
@@ -101,7 +116,7 @@ export function createService({ hosted = false, project = null } = {}) {
 
   return {
     hosted,
-    templates: () => ({ skill: listTemplates("skill"), agent: listTemplates("agent"), tools: TOOLS, hosted }),
+    templates: () => ({ skill: listTemplates("skill"), agent: listTemplates("agent"), tools: TOOLS, hosted, projectSkills: hosted ? [] : projectSkills(project) }),
     render: (b) => ({ text: renderDraft(b) }),
     check: (b) => build(b, false),
     save: (b) => build(b, true),

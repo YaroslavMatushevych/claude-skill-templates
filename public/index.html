@@ -38,6 +38,21 @@
       <div class="note" id="name-note"></div>
       <label class="field" for="description">Description <span class="hint counter" id="counter">0 / 1024</span></label>
       <textarea id="description" rows="3" placeholder="Write release notes from the git log. Use when asked for release notes."></textarea>
+      <div id="skill-options" hidden>
+        <label class="field">Who starts it</label>
+        <div class="segmented wide" role="radiogroup" aria-label="Who starts it">
+          <button type="button" role="radio" id="start-auto" aria-checked="true">Claude, when it fits</button>
+          <button type="button" role="radio" id="start-manual" aria-checked="false">Only me, with /name</button>
+        </div>
+        <div class="row">
+          <div><label class="field" for="smodel">Model</label>
+            <select id="smodel"><option value="">Template default</option><option>haiku</option><option>sonnet</option><option>opus</option><option>inherit</option></select></div>
+          <div><label class="field">Context</label>
+            <label class="check"><input type="checkbox" id="fork"> Run in its own context</label></div>
+        </div>
+        <label class="field">Block these tools <span class="hint">Claude cannot use them while this skill runs</span></label>
+        <div class="toolchips" id="blocked"></div>
+      </div>
       <div id="agent-options" hidden>
         <div class="row">
           <div><label class="field" for="model">Model</label>
@@ -46,8 +61,13 @@
         </div>
         <label class="field">Tools <span class="hint">the tool list is the guard</span></label>
         <div class="toolchips" id="tools"></div>
-        <label class="field" for="skills">Skills it follows <span class="hint">comma separated names</span></label>
-        <input type="text" id="skills" placeholder="workflow" autocomplete="off" spellcheck="false">
+        <label class="field">Skills it follows <span class="hint">the agent follows them as its steps</span></label>
+        <div class="toolchips" id="skillpick"></div>
+        <div class="row" style="margin-top:8px">
+          <input type="text" id="skill-custom" placeholder="Another skill name, for example release-notes" autocomplete="off" spellcheck="false" aria-label="Another skill name" style="flex:3">
+          <button type="button" class="btn small" id="skill-add" style="flex:none;min-width:0">Add</button>
+        </div>
+        <div class="note" id="skill-note">A skill must exist in <code>.claude/skills</code> for the agent to follow it. Build it in the Skill tab.</div>
       </div>
       <details class="adv"><summary>Advanced</summary>
         <label class="field" for="outDir">Folder <span class="hint">where the file goes, relative to your project</span></label>

@@ -60,8 +60,8 @@ Every template has an `INSTRUCTIONS.md` with **Change** (what to edit for your p
 `node scripts/ui.mjs` (add `--dir <project>` to build for another folder, `--port <n>` to change the port).
 
 1. Pick a template. The page shows when to use it and what to change.
-2. Give it a name and a description. The draft updates as you type. You can edit the whole file.
-3. For a skill, add references and scripts. A reference is pasted text, a URL, or a file from your project. You must say when Claude should read it. For an agent, choose the model, the tools and the skills.
+2. Give it a name and a description. The draft updates as you type, and you can edit the whole file. For a skill, set who starts it (Claude, or only you with `/name`), the model, whether it runs in its own context, and which tools are blocked. For an agent, set the model, max turns, the tools, and the skills it follows. Pick those from a list: the skill templates, the skills already in your project, or any name you add.
+3. For a skill, add references and scripts. A reference is pasted text, a URL, or a file from your project. You must say when Claude should read it. 
 4. The checks update as you work. Save to your project, or download a zip, when there are no errors.
 
 The server listens on `127.0.0.1` only, refuses requests from other sites, and writes only inside the project folder.
