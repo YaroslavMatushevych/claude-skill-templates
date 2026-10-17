@@ -72,6 +72,20 @@ function check(folder) {
     if (/^TEMPLATE:/m.test(body)) errors.push("A `TEMPLATE:` comment line is still in the file. Delete it.");
     if (/<[a-z][a-z -]*>/i.test(body.replace(/`[^`]*`/g, ""))) warnings.push("The body has `<placeholder>` text outside code. Fill it in.");
   }
+  const pointers = [...new Set([...body.matchAll(/(?:references|scripts)\/[A-Za-z0-9._-]+/g)].map((m) => m[0]))];
+  for (const p of pointers) {
+    if (!existsSync(join(folder, p))) errors.push(`SKILL.md points to \`${p}\`, but the file does not exist.`);
+  }
+  const refDir = join(folder, "references");
+  if (existsSync(refDir)) {
+    for (const f of readdirSync(refDir)) {
+      if (!pointers.includes(`references/${f}`)) warnings.push(`references/${f} is not linked from SKILL.md. Claude will not know when to read it.`);
+      const refText = readFileSync(join(refDir, f), "utf8");
+      if (f.endsWith(".md") && refText.split("\n").length > 100 && !/^#{1,6}\s*(table of )?contents\s*$/im.test(refText.split("\n").slice(0, 40).join("\n"))) {
+        warnings.push(`references/${f} has over 100 lines and no table of contents.`);
+      }
+    }
+  }
   const caps = (body.match(/\b(ALWAYS|NEVER|MUST)\b/g) ?? []).length;
   if (caps > 3) warnings.push(`${caps} words in capitals (ALWAYS, NEVER, MUST). Explain the reason in plain words instead.`);
   if (!/gotchas/i.test(body)) warnings.push("No Gotchas section.");

@@ -1,14 +1,17 @@
 # Instructions for Claude
 
-This repo holds nine role skills: `clarifier`, `explorer`, `planner`, `implementer`, `tester`, `debugger`, `reviewer`, `verifier`, `writer`.
+This repo is a skill constructor (`scripts/skill.mjs`) and nine templates. Use the constructor. Do not write a skill file by hand.
 
-When the user asks you to adapt a role:
+To build a skill:
 
-1. Read `templates/<role>/INSTRUCTIONS.md`.
-2. Change only what it lists under **Change**. Keep what it lists under **Keep**.
-3. Run `node scripts/validate.mjs <folder>`. Fix every error.
-4. Run the skill on the task under **Test**. Read the whole transcript. Fix the skill, not the task.
+1. `node scripts/skill.mjs templates` and pick the template that fits.
+2. `node scripts/skill.mjs new <name> --template <template> --description "<what it makes. Use when ...>"`
+3. Edit `SKILL.md`. Change only what the command printed under **Change**. Keep what it printed under **Keep**.
+4. For each long document the skill needs, run `node scripts/skill.mjs add-reference <skill-folder> <file-or-url> --when "<when to read it>"`. Name the exact moment in `--when`.
+5. For a script the skill should run, use `add-script`.
+6. `node scripts/skill.mjs check <skill-folder>`. Fix every error. Read `docs/checklist.md` for the rest.
+7. Run the skill on three real tasks. Read the whole transcript. Fix the skill, not the task.
 
-When the user asks for a new role, check `docs/checklist.md` first. A new role needs a `SKILL.md` that works as it is, and an `INSTRUCTIONS.md` with Change, Keep and Test. It must pass `node scripts/validate.mjs`.
+To add a template: create `templates/<name>/SKILL.md` that works as it is, with no placeholders, and `INSTRUCTIONS.md` with **Change**, **Keep** and **Test**. Run `npm test` and `node scripts/validate.mjs templates`.
 
-Rules for this repo: short sentences, simple words, no em-dashes, no `<placeholder>` text in a `SKILL.md`.
+Rules for this repo: short sentences, simple words, no em-dashes.

@@ -1,21 +1,47 @@
 # claude-skill-templates
 
-Nine role skills for Claude Code. Copy one folder and use it. No blanks to fill.
+A skill constructor for Claude Code. It builds a skill from a template, adds references and scripts, and checks the result. Claude can run it for you.
 
-The roles are the ones that the most used skill sets share: ask, explore, plan, build, test, debug, review, verify, write.
-
-## Use one
+## Set up
 
 ```bash
-cp -R templates/planner ~/.claude/skills/        # for all your projects
-cp -R templates/planner .claude/skills/          # for this project only
+git clone https://github.com/YaroslavMatushevych/claude-skill-templates ~/skill-templates
 ```
 
-Then call it: `/planner add a price filter to the search page`.
+Add this to your `CLAUDE.md` (project or `~/.claude/CLAUDE.md`):
 
-## The roles
+```markdown
+## Building skills
+To create or change a skill, use the constructor in `~/skill-templates`:
+1. `node ~/skill-templates/scripts/skill.mjs templates` lists the templates. Pick one that fits.
+2. `node ~/skill-templates/scripts/skill.mjs new <name> --template <template> --description "<what it makes. Use when ...>"`
+3. Edit `SKILL.md`. The command prints what to change and what to keep.
+4. For each long document the skill needs, run `node ~/skill-templates/scripts/skill.mjs add-reference <skill-folder> <file-or-url> --when "<when to read it>"`.
+5. Run `node ~/skill-templates/scripts/skill.mjs check <skill-folder>` and fix every error.
+6. Run the skill on three real tasks before you say it is done.
+```
 
-| Role | What it does | Use it when |
+Then ask: "Create a skill that writes release notes from the git log."
+
+## The commands
+
+| Command | What it does |
+|---|---|
+| `templates` | Lists the templates and what each is for. |
+| `new <name> --template <t>` | Creates `.claude/skills/<name>/SKILL.md` from a template. Sets the name. Add `--description "..."` to set the description and `--dir <folder>` to change where it is created. Prints what to **change** and what to **keep**. |
+| `add-reference <skill> <file-or-url> --when "..."` | Copies a file, or downloads a URL, into `references/`. Adds a line to `SKILL.md` that says when to read it. Adds a table of contents to a long file. |
+| `add-script <skill> <file>` | Copies a script into `scripts/`. Adds a line that says to run it, not read it. Add `--read` if Claude must read it. |
+| `check <skill>` | Checks the name, the description, the length, the pointers and the references. |
+
+All commands run as `node scripts/skill.mjs <command>`. Node 18 or newer. No dependencies.
+
+Why `--when` is required: the words in the pointer decide when Claude opens the file. A vague pointer means Claude never reads it.
+
+## The templates
+
+Each template is a skill that works as it is. Each has an `INSTRUCTIONS.md` with **Change**, **Keep** and **Test**.
+
+| Template | What it does | Use it when |
 |---|---|---|
 | [`clarifier`](templates/clarifier/) | Asks questions until a request is clear. | Claude starts before it understands you. |
 | [`explorer`](templates/explorer/) | Finds things in the code, returns paths and a short answer. Read-only. | "Where is X?" "How does Y work here?" |
@@ -27,36 +53,21 @@ Then call it: `/planner add a price filter to the search page`.
 | [`verifier`](templates/verifier/) | Shows fresh evidence before it says "done". | Claude says "fixed" without proof. |
 | [`writer`](templates/writer/) | Writes a spec, plan or summary from what is known. | A discussion is done and you want it on paper. |
 
-A common order: `clarifier` then `planner`, `implementer`, `reviewer`, `verifier`. The others fit anywhere.
+A common order: `clarifier`, `planner`, `implementer`, `reviewer`, `verifier`. The others fit anywhere.
 
-## Make it yours
+To use a template as it is, without the constructor: `cp -R templates/planner ~/.claude/skills/`.
 
-Each folder has an `INSTRUCTIONS.md` with three short parts: **Change** (what to edit for your project), **Keep** (what makes the role work) and **Test** (how to check it).
+## Use a skill as an agent
 
-To let Claude adapt a role, add this to your `CLAUDE.md`:
+An agent file can name a skill in its `skills:` field, and the agent follows it. `clarifier` and `writer` cannot be loaded this way, because you start them (`disable-model-invocation: true`).
 
-```markdown
-## Adapting skills
-When I ask you to adapt a skill from `skill-templates`:
-1. Read `templates/<role>/INSTRUCTIONS.md`.
-2. Change only what it lists under Change. Keep what it lists under Keep.
-3. Run `node scripts/validate.mjs <folder>` and fix every error.
-4. Run the skill on the task under Test and show me the result.
-```
+`explorer`, `planner` and `reviewer` run in their own context (`context: fork`) and have read tools only. The tool list is the guard. A sentence that says "do not edit" is only a request.
 
-## Use a role as an agent
-
-An agent file can name a skill in its `skills:` field, and the agent follows it. `clarifier` and `writer` cannot be loaded this way, because they are started by you (`disable-model-invocation: true`).
-
-`explorer`, `planner` and `reviewer` already run in their own context (`context: fork`) and only have read tools. That tool list is the guard. A sentence in the prompt that says "do not edit" is only a request.
-
-## Check a skill
+## Test
 
 ```bash
-node scripts/validate.mjs .claude/skills/my-skill
+npm test
 ```
-
-It checks the name, the description, the length and the frontmatter. Node 18 or newer, no dependencies. The full list of what a good skill needs is in [`docs/checklist.md`](docs/checklist.md).
 
 ## Sources
 
@@ -67,4 +78,4 @@ It checks the name, the description, the length and the frontmatter. Node 18 or 
 - Thariq, "Lessons from Building Claude Code: How We Use Skills", March 2026
 - Simon Willison, "Claude Skills are awesome, maybe a bigger deal than MCP", October 2025
 
-MIT license.
+MIT license. The checklist for a good skill is in [`docs/checklist.md`](docs/checklist.md).

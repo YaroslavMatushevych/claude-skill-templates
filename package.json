@@ -1,0 +1,9 @@
+{
+  "name": "claude-skill-templates",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
