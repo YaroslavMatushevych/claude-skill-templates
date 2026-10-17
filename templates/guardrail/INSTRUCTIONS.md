@@ -1,8 +1,8 @@
 # `guardrail`
 
-**Purpose:** one rule that Claude tends to skip when it is in a hurry.
-**Use when:** Claude says "done" or "fixed" without proof, or skips one step under pressure.
+**Purpose:** Make Claude prove its work before it says it is done.
+**Use when:** Claude says "done" or "fixed" without showing proof, or it skips a step when it is in a hurry.
 
-**Change:** the rule line and the command that proves it in your project, for example the test and type-check command. Add the real excuses you see to the table.
-**Keep:** one rule per skill, the steps as a gate, and the excuses table. If a rule must hold every time, add a hook too. A skill is still only an instruction.
-**Test:** ask Claude to fix a small bug and say when done. It should show a test run from after the fix.
+**Change:** the rule line at the top, and the command that proves the work in your project, for example your test and type-check command. Add the excuses Claude really gives you to the table.
+**Keep:** one rule per skill, the steps (name the claim, get the proof, compare), and the table of excuses. A skill is still only an instruction. If a rule must hold every single time, add a hook as well.
+**Test:** ask Claude to fix a small bug and tell you when it is done. It should show a test run that happened after the fix.

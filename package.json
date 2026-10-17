@@ -1,7 +1,7 @@
 {
   "name": "claude-skill-templates",
   "version": "1.0.0",
-  "description": "Build Claude Code skills and agents: a web UI, a command line, six skill templates and five agent templates.",
+  "description": "Jig: skill builder for Claude Code. A web UI, a command line, six skill templates and five agent templates.",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -14,5 +14,5 @@
   "repository": { "type": "git", "url": "git+https://github.com/YaroslavMatushevych/claude-skill-templates.git" },
   "bugs": { "url": "https://github.com/YaroslavMatushevych/claude-skill-templates/issues" },
   "homepage": "https://github.com/YaroslavMatushevych/claude-skill-templates#readme",
-  "keywords": ["claude-code", "claude", "skills", "agents", "subagents", "templates", "builder"]
+  "keywords": ["claude-code", "claude", "skills", "agents", "subagents", "templates", "builder", "jig", "ai", "developer-tools"]
 }

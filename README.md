@@ -1,14 +1,48 @@
-# claude-skill-templates
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/brand/logo-light.svg">
+    <img src="public/brand/logo.svg" alt="Jig" height="72">
+  </picture>
+</p>
 
-Build Claude Code skills and agents faster. Pick a template, fill in a few lines, check the result. Use the web UI, the command line, or let Claude run it for you.
+<p align="center"><b>Skill builder for Claude Code.</b><br>
+Pick a template, fill in a few lines, check it, and save a skill or an agent.<br>
+A web page, a command line, 6 skill templates and 5 agent templates.</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-4f46e5"></a>
+  <img alt="Node 18 or newer" src="https://img.shields.io/badge/node-%E2%89%A518-4f46e5">
+  <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-0-4f46e5">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/skill.png" alt="Jig, Skill tab: six templates on the left, the generated SKILL.md on the right" width="900">
+</p>
+
+## Quick start
 
 ```bash
-git clone https://github.com/YaroslavMatushevych/claude-skill-templates ~/skill-templates
+git clone https://github.com/YaroslavMatushevych/claude-skill-templates ~/jig
 cd ~/your-project
-node ~/skill-templates/scripts/ui.mjs
+node ~/jig/scripts/ui.mjs
 ```
 
-The UI opens in your browser. It saves into `.claude/skills` or `.claude/agents` of the folder you started it in. Node 18 or newer. No dependencies.
+The page opens in your browser. It saves into `.claude/skills` or `.claude/agents` in the folder where you ran the command. You need Node 18 or newer. There is nothing to install.
+
+**Why "Jig".** A jig is a workshop tool that holds the work in a fixed shape, so every piece comes out the same. The templates do that for skills and agents.
+
+## What it looks like
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/agent.png" alt="The Agent tab: model, max turns, tools and the skills the agent follows"></td>
+    <td width="50%"><img src="docs/screenshots/checks.png" alt="The Checks tab warns that allowed-tools does not block edits"></td>
+  </tr>
+  <tr>
+    <td><b>Agents too.</b> Choose the model, the tools and the skills it follows from a list.</td>
+    <td><b>Checks as you type.</b> This one catches a common trap: <code>allowed-tools</code> does not block anything.</td>
+  </tr>
+</table>
 
 ## What do you want to build?
 
@@ -41,7 +75,7 @@ A common chain: `explorer` finds the code, `planner` writes a plan, you approve 
 | [`knowledge`](templates/knowledge/) | Your traps and rules for one tool, library or area. No steps. | Claude repeats a mistake with it. |
 | [`guardrail`](templates/guardrail/) | One rule to follow before a claim or an action. | Claude skips a step when in a hurry. |
 
-`knowledge` is a frame. It has no content until you list your own traps and rules in it. The other five work as they are.
+`knowledge` is the one template that starts empty. It has no content until you list your own traps and rules in it. The other five work as they are.
 
 ## Agent templates
 
@@ -53,11 +87,11 @@ A common chain: `explorer` finds the code, `planner` writes a plan, you approve 
 | [`reviewer`](agent-templates/reviewer/) | Read, Grep, Glob | sonnet | You want a review that cannot change anything. You pass it the diff. |
 | [`tester`](agent-templates/tester/) | Read, Edit, Write, Grep, Glob, Bash | sonnet | You have acceptance criteria and want failing tests first. |
 
-Every template has an `INSTRUCTIONS.md` with **Change** (what to edit for your project), **Keep** (what makes it work) and **Test** (how to check it).
+Every template has an `INSTRUCTIONS.md` with the same four parts: when to use it, what to edit for your project, what to keep, and how to test it. The builder shows them under "About this template".
 
 ## What you can set
 
-The builder writes the real frontmatter fields from the Claude Code docs. It checks every value and warns about a field name it does not know, because Claude Code ignores a misspelled field without an error.
+The builder writes the real settings from the Claude Code docs. They sit in a block at the top of the file, called frontmatter. It checks every value. It also warns about a setting name it does not know, because Claude Code ignores a misspelled setting without telling you.
 
 **Skill.** Who can start it, as three modes:
 
@@ -123,9 +157,9 @@ Add this to your `CLAUDE.md`:
 
 ```markdown
 ## Building skills and agents
-To create or change a skill or an agent, use the constructor in `~/skill-templates`:
-1. `node ~/skill-templates/scripts/skill.mjs templates` lists the templates. Pick one that fits.
-2. `node ~/skill-templates/scripts/skill.mjs new <name> --template <template> --description "<what it makes. Use when ...>"` for a skill, or `new-agent` for an agent.
+To create or change a skill or an agent, use the constructor in `~/jig`:
+1. `node ~/jig/scripts/skill.mjs templates` lists the templates. Pick one that fits.
+2. `node ~/jig/scripts/skill.mjs new <name> --template <template> --description "<what it makes. Use when ...>"` for a skill, or `new-agent` for an agent.
 3. Edit the file. The command prints what to change and what to keep.
 4. For each long document, run `add-reference <skill-folder> <file-or-url> --when "<when to read it>"`.
 5. Run `check <skill-folder-or-agent-file>` and fix every error.

@@ -1,8 +1,8 @@
 # `investigate`
 
-**Purpose:** answer a question about the code or a failure, with proof. It does not edit files.
+**Purpose:** Answer a question about the code, or find why something fails, and show the proof.
 **Use when:** you ask "where is X?", "how does Y work?" or "why does Z fail?". It runs in its own context, so the search does not fill your session.
 
-**Change:** the length limit ("at most 20 lines") if you want longer answers. For a failure in your system, add two lines at the end: where the logs are, and the command that shows recent changes.
-**Keep:** `disallowed-tools: Write Edit NotebookEdit` and "every claim has proof". The disallowed list blocks the edit tools. It does not stop a shell command from writing a file. For a hard guarantee, use the `explorer` agent, which has no `Bash`.
-**Test:** ask where a known feature lives. Check that every path it gives exists.
+**Change:** the length limit ("at most 20 lines") if you want longer answers. For failures in your system, add two lines at the end: where the logs are, and the command that shows recent changes.
+**Keep:** the blocked tools (`Write`, `Edit`, `NotebookEdit`) and the rule "every claim has proof". Blocking those tools stops Claude from editing files. A shell command can still write a file. For a hard guarantee, use the `explorer` agent, which has no shell.
+**Test:** ask where a feature you know lives. Check that every file path in the answer exists.

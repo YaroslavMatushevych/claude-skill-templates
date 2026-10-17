@@ -5,13 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Build Claude Code skills and agents from templates. Add references, check the result, and download it.">
 <meta name="color-scheme" content="light dark">
-<title>Skill builder for Claude Code</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<title>Jig: skill builder for Claude Code</title>
+<meta name="theme-color" content="#4f46e5">
+<meta property="og:title" content="Jig: skill builder for Claude Code">
+<meta property="og:description" content="Pick a template, fill in a few lines, check it, and save a skill or an agent.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/brand/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/brand/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><img src="/favicon.svg" alt="" width="28" height="28"> Skill builder</div>
+  <div class="brand"><img src="/brand/mark.svg" alt="" width="32" height="32"><span class="brand-name">Jig</span><span class="brand-sub">Skill builder</span></div>
   <div class="segmented" role="tablist" aria-label="What to build">
     <button role="tab" id="tab-skill" aria-selected="true" data-tip="A skill is a procedure Claude follows in your session.">Skill</button>
     <button role="tab" id="tab-agent" aria-selected="false" data-tip="An agent is a separate worker with its own context and its own tools.">Agent</button>
@@ -50,9 +58,9 @@
         </div>
         <div class="note" id="start-note"></div>
         <div class="row">
-          <div><label class="field" for="smodel" data-tip="Which model runs it. Template default keeps the template&#x27;s choice. inherit uses your session&#x27;s model. Other takes a full model ID.">Model</label><select id="smodel"><option value="">Template default</option><option>haiku</option><option>sonnet</option><option>opus</option><option>fable</option><option>inherit</option><option value="__other">Other (a full model ID)</option></select>
+          <div><label class="field" for="smodel" data-tip="Which model runs it. Not set means Claude Code picks one. inherit uses your current session&#x27;s model. Other takes a full model ID.">Model</label><select id="smodel"><option value="">Not set</option><option>haiku</option><option>sonnet</option><option>opus</option><option>fable</option><option>inherit</option><option value="__other">Other (a full model ID)</option></select>
             <input type="text" id="smodel-other" placeholder="claude-opus-5-5" hidden style="margin-top:6px" aria-label="Full model ID"></div>
-          <div><label class="field" for="seffort" data-tip="How hard the model thinks while this runs, from low to max. Higher costs more and takes longer.">Effort</label><select id="seffort"><option value="">Template default</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
+          <div><label class="field" for="seffort" data-tip="How hard the model thinks while this runs, from low to max. Not set means the normal level. Higher costs more and takes longer.">Effort</label><select id="seffort"><option value="">Not set</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
         </div>
         <label class="field" data-tip="Run the skill in a separate worker, so its work does not fill your session. The worker returns a short result.">Context</label>
         <label class="check" data-tip="Run the skill in a separate worker, so its work does not fill your session."><input type="checkbox" id="fork"> Run in its own context, like a separate worker</label>
@@ -78,12 +86,12 @@
 
       <div id="agent-options" hidden>
         <div class="row">
-          <div><label class="field" for="amodel" data-tip="Which model runs the agent. Template default keeps the template&#x27;s choice. inherit uses your session&#x27;s model. Other takes a full model ID.">Model</label><select id="amodel"><option value="">Template default</option><option>haiku</option><option>sonnet</option><option>opus</option><option>fable</option><option>inherit</option><option value="__other">Other (a full model ID)</option></select>
+          <div><label class="field" for="amodel" data-tip="Which model runs the agent. Not set means Claude Code picks one. inherit uses your current session&#x27;s model. Other takes a full model ID.">Model</label><select id="amodel"><option value="">Not set</option><option>haiku</option><option>sonnet</option><option>opus</option><option>fable</option><option>inherit</option><option value="__other">Other (a full model ID)</option></select>
             <input type="text" id="amodel-other" placeholder="claude-opus-5-5" hidden style="margin-top:6px" aria-label="Full model ID"></div>
-          <div><label class="field" for="maxTurns" data-tip="The most steps the agent takes before it stops. It limits a run that gets stuck.">Max turns</label><input type="number" id="maxTurns" min="1" placeholder="Default"></div>
-          <div><label class="field" for="aeffort" data-tip="How hard the model thinks while the agent runs, from low to max. Higher costs more and takes longer.">Effort</label><select id="aeffort"><option value="">Template default</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
+          <div><label class="field" for="maxTurns" data-tip="The most steps the agent takes before it stops. It limits a run that gets stuck.">Max turns</label><input type="number" id="maxTurns" min="1" placeholder="No limit"></div>
+          <div><label class="field" for="aeffort" data-tip="How hard the model thinks while the agent runs, from low to max. Not set means the normal level. Higher costs more and takes longer.">Effort</label><select id="aeffort"><option value="">Not set</option><option>low</option><option>medium</option><option>high</option><option>xhigh</option><option>max</option></select></div>
         </div>
-        <label class="field" data-tip="The agent can use only these tools. An empty list gives it every tool. This list is the guard.">Tools <span class="hint">the agent can use only these. This is the guard.</span></label>
+        <label class="field" data-tip="The agent can use only these tools. An empty list gives it every tool. This list is what keeps it safe.">Tools <span class="hint">the agent can use only these. This list keeps it safe.</span></label>
         <div class="toolchips" id="tools"></div>
         <div class="row" style="margin-top:8px"><input type="text" id="tools-custom" autocomplete="off" spellcheck="false" aria-label="Add another" style="flex:3"><button type="button" class="btn small" id="tools-add" style="flex:none;min-width:0">Add</button></div>
         <label class="field" data-tip="Skills the agent follows from the start. They must exist in .claude/skills. A skill that only you start cannot be loaded.">Skills it follows <span class="hint">the agent follows them as its steps</span></label>
@@ -96,13 +104,13 @@
         <details class="adv"><summary>More options</summary>
           <div class="row">
             <div><label class="field" for="permission" data-tip="How the agent handles permission prompts. plan is read-only planning. acceptEdits accepts file edits. bypassPermissions skips every prompt, so use it only in a sandbox.">Permission mode</label>
-              <select id="permission"><option value="">Template default</option><option value="default">default: ask for risky actions</option><option value="acceptEdits">acceptEdits: accept file edits</option><option value="auto">auto: a classifier decides</option><option value="dontAsk">dontAsk: deny what is not allowed</option><option value="plan">plan: read-only planning</option><option value="bypassPermissions">bypassPermissions: skip every prompt</option></select></div>
+              <select id="permission"><option value="">Not set</option><option value="default">default: ask for risky actions</option><option value="acceptEdits">acceptEdits: accept file edits</option><option value="auto">auto: a classifier decides</option><option value="dontAsk">dontAsk: deny what is not allowed</option><option value="plan">plan: read-only planning</option><option value="bypassPermissions">bypassPermissions: skip every prompt</option></select></div>
             <div><label class="field" for="memory" data-tip="Lets the agent keep notes between sessions. user is all projects, project is this project, local is this project and not shared. Notes can go stale. Prefer none for an agent that runs alone.">Memory <span class="hint">notes kept between sessions</span></label>
               <select id="memory"><option value="">None</option><option value="user">user: all your projects</option><option value="project">project: this project</option><option value="local">local: this project, not shared</option></select></div>
             <div><label class="field" for="color" data-tip="The color of the agent in the task list and the transcript. It changes nothing else.">Color</label>
               <select id="color"><option value="">None</option><option>red</option><option>blue</option><option>green</option><option>yellow</option><option>purple</option><option>orange</option><option>pink</option><option>cyan</option></select></div>
           </div>
-          <label class="check" style="margin-top:12px"><input type="checkbox" id="isolation"> Work in a temporary git worktree, so it cannot touch your checkout</label>
+          <label class="check" style="margin-top:12px"><input type="checkbox" id="isolation"> Work in a temporary copy of the repository (a git worktree), so it cannot change your files</label>
           <label class="check" style="margin-top:8px"><input type="checkbox" id="background"> Always run in the background</label>
           <label class="field" for="mcp" data-tip="Names of MCP servers the agent can use, for example github.">MCP servers <span class="hint">names, comma separated</span></label>
           <input type="text" id="mcp" placeholder="github, slack" autocomplete="off" spellcheck="false">

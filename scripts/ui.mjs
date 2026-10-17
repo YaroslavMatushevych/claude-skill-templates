@@ -20,8 +20,8 @@ const PORT = Number(flag("port", 4747));
 const PROJECT = resolve(flag("dir", process.cwd()));
 const service = createService({ hosted: false, project: PROJECT });
 
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" };
-const STATIC = new Set(["index.html", "app.js", "style.css", "zip.js", "favicon.svg"]);
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png", ".webmanifest": "application/manifest+json" };
+const STATIC = /^(index\.html|app\.js|style\.css|zip\.js|site\.webmanifest|brand\/[a-z0-9._-]+\.(svg|png))$/;
 
 function readBody(req) {
   return new Promise((ok, fail) => {
@@ -46,7 +46,7 @@ function readBody(req) {
 
 const send = (res, status, body, type = "application/json") => {
   res.writeHead(status, {
-    "content-type": `${type}; charset=utf-8`, "cache-control": "no-store", "x-content-type-options": "nosniff",
+    "content-type": type.startsWith("image/png") ? type : `${type}; charset=utf-8`, "cache-control": "no-store", "x-content-type-options": "nosniff",
     "content-security-policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src *; img-src 'self' data:; frame-ancestors 'none'",
   });
   res.end(type === "application/json" ? JSON.stringify(body) : body);
@@ -63,7 +63,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET") {
       if (url.pathname === "/api/templates") return send(res, 200, service.templates());
       const file = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
-      if (STATIC.has(file) && existsSync(join(PUBLIC, file))) return send(res, 200, readFileSync(join(PUBLIC, file), "utf8"), TYPES[extname(file)]);
+      if (STATIC.test(file) && existsSync(join(PUBLIC, file))) {
+        const bytes = readFileSync(join(PUBLIC, file));
+        return send(res, 200, extname(file) === ".png" ? bytes : bytes.toString("utf8"), TYPES[extname(file)]);
+      }
     }
     if (req.method === "POST" && url.pathname === "/api/render") return send(res, 200, service.render(await readBody(req)));
     if (req.method === "POST" && url.pathname === "/api/check") return send(res, 200, await service.check(await readBody(req)));

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0b0d12"/>
+  <rect x="0" y="618" width="1200" height="12" fill="#4f46e5"/>
+  <g transform="translate(96 150) scale(2.6)">
+    <rect width="64" height="64" rx="15" fill="#4f46e5"/>
+    <path d="M41 14v22c0 7.6-5 12.5-12 12.5-4.4 0-7.6-1.8-9.8-5" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="16.5" y="13.5" width="9" height="9" rx="2.5" fill="#fdba74"/>
+  </g>
+  <text x="300" y="248" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="150" font-weight="800" fill="#ffffff" letter-spacing="-4">Jig</text>
+  <text x="304" y="318" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="44" font-weight="600" fill="#a5b4fc">Skill builder for Claude Code</text>
+  <text x="96" y="470" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="40" fill="#e8eaf0">Pick a template. Fill in a few lines.</text>
+  <text x="96" y="526" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="40" fill="#e8eaf0">Check it. Save a skill or an agent.</text>
+</svg>

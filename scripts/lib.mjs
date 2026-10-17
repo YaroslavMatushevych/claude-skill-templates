@@ -481,7 +481,7 @@ export function checkAgent(file) {
     if (!KNOWN_TOOLS.has(base) && !base.startsWith("mcp__")) warnings.push(`\`${t}\` is not a tool name that Claude Code knows.`);
   }
   if (/read[- ]only|cannot edit|does not edit/i.test(description) && tools.some((t) => WRITE_TOOLS.includes(t))) {
-    errors.push("The description says read-only, but the tools include an edit tool (Edit, Write or NotebookEdit). The tool list is the guard. Remove it.");
+    errors.push("The description says read-only, but the tools include an edit tool (Edit, Write or NotebookEdit). The tool list is what keeps it read-only. Remove it.");
   }
   if (/read[- ]only|cannot edit|does not edit/i.test(description) && tools.some((t) => SHELL_TOOLS.includes(t))) {
     warnings.push("The description says read-only, but the tools include a shell (Bash or PowerShell). A shell can write files. Remove it for a hard guarantee.");

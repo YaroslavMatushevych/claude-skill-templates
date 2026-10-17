@@ -40,7 +40,15 @@ test("serves the page and the template lists", async () => {
   for (const id of ["splitter", "grip", "swap", "reset-layout"]) assert.match(page, new RegExp(`id="${id}"`), id);
   const app = await (await fetch(`${BASE}/app.js`)).text();
   assert.match(app, /skill-builder-layout/);
-  for (const f of ["app.js", "style.css", "zip.js", "favicon.svg"]) assert.equal((await fetch(`${BASE}/${f}`)).status, 200, f);
+  for (const f of ["app.js", "style.css", "zip.js", "site.webmanifest", "brand/mark.svg", "brand/favicon.svg", "brand/logo.svg", "brand/logo-light.svg", "brand/icon-192.png", "brand/icon-512.png", "brand/apple-touch-icon.png", "brand/og-image.png"]) assert.equal((await fetch(`${BASE}/${f}`)).status, 200, f);
+  // PNG files must arrive as the exact bytes, with the PNG signature
+  const png = Buffer.from(await (await fetch(`${BASE}/brand/icon-512.png`)).arrayBuffer());
+  assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  assert.equal((await fetch(`${BASE}/brand/icon-512.png`)).headers.get("content-type"), "image/png");
+  const manifest = await (await fetch(`${BASE}/site.webmanifest`)).json();
+  assert.equal(manifest.short_name, "Jig");
+  assert.equal((await fetch(`${BASE}/brand/../../package.json`)).status, 404);
+  assert.equal((await fetch(`${BASE}/brand/secret.txt`)).status, 404);
   assert.equal((await fetch(`${BASE}/scripts/lib.mjs`)).status, 404);
   const t = await (await fetch(`${BASE}/api/templates`)).json();
   assert.equal(t.hosted, false);

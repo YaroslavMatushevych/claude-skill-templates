@@ -19,4 +19,4 @@ Input: $ARGUMENTS
 
 ## Gotchas
 
-- A check that never failed proves nothing. Run it red first.
+- A check that never failed proves nothing. Run it first and watch it fail.

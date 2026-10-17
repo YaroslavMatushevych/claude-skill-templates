@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 214 76" role="img" aria-label="Jig, skill builder for Claude Code">
+  <title>Jig</title>
+  <rect width="64" height="64" rx="15" fill="#4f46e5"/>
+  <path d="M41 14v22c0 7.6-5 12.5-12 12.5-4.4 0-7.6-1.8-9.8-5" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="16.5" y="13.5" width="9" height="9" rx="2.5" fill="#fdba74"/>
+  <g fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M100 14v26c0 7-4.4 11-10.6 11-4 0-6.8-1.6-8.8-4.4"/>
+    <path d="M122 28v23"/>
+    <circle cx="156" cy="39.5" r="12"/>
+    <path d="M168 28v25c0 8.4-5.2 12.5-12.4 12.5-4.4 0-7.6-1.4-10-4"/>
+  </g>
+  <rect x="117.8" y="11.5" width="8.4" height="8.4" rx="2.4" fill="#fb923c"/>
+</svg>

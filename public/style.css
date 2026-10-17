@@ -24,7 +24,10 @@ button { font: inherit; }
 /* top bar */
 .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 20px; padding: 12px 28px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
 .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
-.brand img { width: 28px; height: 28px; }
+.brand img { width: 32px; height: 32px; }
+.brand-name { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.brand-sub { font-size: 14px; font-weight: 500; color: var(--muted); padding-left: 10px; border-left: 1px solid var(--border); margin-left: 2px; }
+@media (max-width: 640px) { .brand-sub { display: none; } }
 .segmented { display: inline-flex; padding: 3px; background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; }
 .segmented button { border: 0; background: transparent; color: var(--muted); padding: 6px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; }
 .segmented button[aria-selected="true"], .segmented button[aria-checked="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
