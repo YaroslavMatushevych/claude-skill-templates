@@ -121,7 +121,7 @@ Not in the form, so edit the file: `hooks`, `shell`, `initialPrompt`, `omitClaud
 
 `node scripts/ui.mjs` (add `--dir <project>` to build for another folder, `--port <n>` to change the port).
 
-1. Open **Skills** or **Agents** in the top bar. Pick a template. The page shows when to use it and what to change.
+1. Choose **Build a skill** or **Build an agent** in the top bar. Pick a template. The page shows when to use it and what to change.
 2. Give it a name and a description. The draft updates as you type, and you can edit the whole file. For a skill, set who starts it (Claude, or only you with `/name`), the model, whether it runs in its own context, and which tools are blocked. For an agent, set the model, max turns, the tools, and the skills it follows. Pick those from a list: the skill templates, the skills already in your project, or any name you add.
 3. For a skill, add references and scripts. A reference is pasted text, a URL, or a file from your project. You must say when Claude should read it. 
 4. The checks update as you work. Save to your project, or download a zip, when there are no errors.
