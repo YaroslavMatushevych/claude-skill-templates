@@ -132,7 +132,6 @@ function checkPayload() {
 
 function setKind(kind) {
   state.kind = kind;
-  for (const k of ["skill", "agent"]) $(`tab-${k}`).setAttribute("aria-selected", String(k === kind));
   $("agent-options").hidden = kind !== "agent";
   $("skill-options").hidden = kind !== "skill";
   $("step-3").hidden = kind !== "skill";
@@ -370,8 +369,6 @@ function optionChanged() {
 }
 
 function wire() {
-  $("tab-skill").onclick = () => setKind("skill");
-  $("tab-agent").onclick = () => setKind("agent");
   for (const t of ["file", "final", "checks"]) $(`pt-${t}`).onclick = () => setTab(t);
   $("name").addEventListener("input", () => { patchDraft(); scheduleCheck(); });
   $("description").addEventListener("input", () => { patchDraft(); scheduleCheck(); });
@@ -505,21 +502,24 @@ function initTheme() {
   apply();
 }
 
-// ---------- two views: Build and Docs, chosen by the address (#build or #docs) ----------
+// ---------- three views: Skills, Agents and Docs, chosen by the address ----------
 
+const VIEWS = { "#skills": "skill", "#agents": "agent", "#docs": "docs" };
 function showView(view) {
   const docs = view === "docs";
   document.body.classList.toggle("docs", docs);
   $("docs-view").hidden = !docs;
-  $("nav-build").toggleAttribute("aria-current", !docs);
-  $("nav-docs").toggleAttribute("aria-current", docs);
-  if (!docs) $("nav-build").setAttribute("aria-current", "page");
-  else $("nav-docs").setAttribute("aria-current", "page");
+  for (const k of ["skill", "agent", "docs"]) {
+    const on = k === view;
+    $(`nav-${k}`).toggleAttribute("aria-current", on);
+    if (on) $(`nav-${k}`).setAttribute("aria-current", "page");
+  }
+  if (!docs && state.data && state.kind !== view) setKind(view);
   document.title = docs ? "Docs: Jig, skill builder for Claude Code" : "Jig: skill builder for Claude Code";
   window.scrollTo(0, 0);
 }
 function route() {
-  showView(location.hash.startsWith("#docs") ? "docs" : "build");
+  showView(VIEWS[location.hash.split("?")[0]] ?? "skill");
 }
 function initDocs() {
   window.addEventListener("hashchange", route);
@@ -540,13 +540,12 @@ function initDocs() {
     }, { rootMargin: "-90px 0px -60% 0px" });
     document.querySelectorAll(".doc section").forEach((s) => observer.observe(s));
   }
-  // "Try it" buttons open the Build page with a template picked.
+  // "Try it" buttons open the Skills or Agents page with a template picked.
   document.querySelectorAll("[data-go]").forEach((b) => {
     b.addEventListener("click", async () => {
       const [kind, template] = b.dataset.go.split(":");
-      location.hash = "#build";
-      showView("build");
-      if (state.kind !== kind) setKind(kind);
+      location.hash = kind === "agent" ? "#agents" : "#skills";
+      showView(kind);
       await pick(template, true);
     });
   });
@@ -670,5 +669,5 @@ function initLayout() {
   initLayout();
   initTheme();
   initDocs();
-  setKind("skill");
+  setKind(VIEWS[location.hash] === "agent" ? "agent" : "skill");
 })();

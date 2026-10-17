@@ -22,13 +22,10 @@
 <header class="topbar">
   <div class="brand"><img src="/brand/mark.svg" alt="" width="32" height="32"><span class="brand-name">Jig</span><span class="brand-sub">Skill builder</span></div>
   <nav class="mainnav" aria-label="Main">
-    <a href="#build" id="nav-build" aria-current="page">Build</a>
+    <a href="#skills" id="nav-skill" aria-current="page" data-tip="Build a skill: a procedure Claude follows in your session.">Skills</a>
+    <a href="#agents" id="nav-agent" data-tip="Build an agent: a separate worker with its own context and its own tools.">Agents</a>
     <a href="#docs" id="nav-docs">Docs</a>
   </nav>
-  <div class="build-only segmented" role="tablist" aria-label="What to build">
-    <button role="tab" id="tab-skill" aria-selected="true" data-tip="A skill is a procedure Claude follows in your session.">Skill</button>
-    <button role="tab" id="tab-agent" aria-selected="false" data-tip="An agent is a separate worker with its own context and its own tools.">Agent</button>
-  </div>
   <div class="spacer"></div>
   <button class="toplink iconbtn build-only" id="swap" type="button" title="Put the preview on the other side" data-tip="Put the preview on the other side.">⇄ Swap sides</button>
   <button class="toplink iconbtn build-only" id="reset-layout" type="button" title="Back to the default layout" data-tip="Back to the default layout.">Reset layout</button>
@@ -105,7 +102,7 @@
           <input type="text" id="skill-custom" placeholder="Another skill name, for example release-notes" autocomplete="off" spellcheck="false" aria-label="Another skill name" style="flex:3">
           <button type="button" class="btn small" id="skill-add" style="flex:none;min-width:0" data-tip="Add a skill by name.">Add</button>
         </div>
-        <div class="note" id="skill-note">A skill must exist in <code>.claude/skills</code> for the agent to follow it. Build it in the Skill tab.</div>
+        <div class="note" id="skill-note">A skill must exist in <code>.claude/skills</code> for the agent to follow it. Build it on the Skills page.</div>
         <details class="adv"><summary>More options</summary>
           <div class="row">
             <div><label class="field" for="permission" data-tip="How the agent handles permission prompts. plan is read-only planning. acceptEdits accepts file edits. bypassPermissions skips every prompt, so use it only in a sandbox.">Permission mode</label>
@@ -195,7 +192,7 @@
       <section id="d-start">
         <h2>Quick start</h2>
         <ol>
-          <li>On the <b>Build</b> page, choose <b>Skill</b> or <b>Agent</b> at the top. Not sure which? Read "Skill or agent?" below.</li>
+          <li>In the top bar, open <b>Skills</b> or <b>Agents</b>. Not sure which? Read "Skill or agent?" below.</li>
           <li>Pick a template. Each card says what it is for. The box under the cards lists examples of what it is good for.</li>
           <li>Give it a name and a description. The file on the right changes as you type. You can also edit the file by hand.</li>
           <li>Optional: choose who can start it, the model and the tools. Add references and scripts.</li>

@@ -16,7 +16,7 @@ A web page, a command line, 6 skill templates and 5 agent templates.</p>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/skill.png" alt="Jig, Skill tab: six templates on the left, the generated SKILL.md on the right" width="900">
+  <img src="docs/screenshots/skill.png" alt="Jig, Skills page: six templates on the left, the generated SKILL.md on the right" width="900">
 </p>
 
 ## Quick start
@@ -35,7 +35,7 @@ The page opens in your browser. It saves into `.claude/skills` or `.claude/agent
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/agent.png" alt="The Agent tab: model, max turns, tools and the skills the agent follows"></td>
+    <td width="50%"><img src="docs/screenshots/agent.png" alt="The Agents page: model, max turns, tools and the skills the agent follows"></td>
     <td width="50%"><img src="docs/screenshots/checks.png" alt="The Checks tab warns that allowed-tools does not block edits"></td>
   </tr>
   <tr>
@@ -44,7 +44,7 @@ The page opens in your browser. It saves into `.claude/skills` or `.claude/agent
   </tr>
   <tr>
     <td width="50%"><img src="docs/screenshots/docs.png" alt="The Docs page: what to use when, and why"></td>
-    <td width="50%"><img src="docs/screenshots/dark.png" alt="The Build page in the dark theme"></td>
+    <td width="50%"><img src="docs/screenshots/dark.png" alt="Jig in the dark theme"></td>
   </tr>
   <tr>
     <td><b>A Docs page.</b> How to use it, what to pick when, and why each template is built the way it is.</td>
@@ -121,7 +121,7 @@ Not in the form, so edit the file: `hooks`, `shell`, `initialPrompt`, `omitClaud
 
 `node scripts/ui.mjs` (add `--dir <project>` to build for another folder, `--port <n>` to change the port).
 
-1. Pick a template. The page shows when to use it and what to change.
+1. Open **Skills** or **Agents** in the top bar. Pick a template. The page shows when to use it and what to change.
 2. Give it a name and a description. The draft updates as you type, and you can edit the whole file. For a skill, set who starts it (Claude, or only you with `/name`), the model, whether it runs in its own context, and which tools are blocked. For an agent, set the model, max turns, the tools, and the skills it follows. Pick those from a list: the skill templates, the skills already in your project, or any name you add.
 3. For a skill, add references and scripts. A reference is pasted text, a URL, or a file from your project. You must say when Claude should read it. 
 4. The checks update as you work. Save to your project, or download a zip, when there are no errors.

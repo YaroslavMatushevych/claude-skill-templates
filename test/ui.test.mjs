@@ -37,7 +37,7 @@ const post = (path, body, origin = BASE) =>
 test("serves the page and the template lists", async () => {
   const page = await (await fetch(BASE)).text();
   assert.match(page, /Skill builder/);
-  for (const id of ["splitter", "grip", "swap", "reset-layout", "docs-view", "nav-docs", "nav-build", "theme"]) assert.match(page, new RegExp(`id="${id}"`), id);
+  for (const id of ["splitter", "grip", "swap", "reset-layout", "docs-view", "nav-docs", "nav-skill", "nav-agent", "theme"]) assert.match(page, new RegExp(`id="${id}"`), id);
   const app = await (await fetch(`${BASE}/app.js`)).text();
   assert.match(app, /skill-builder-layout/);
   assert.match(app, /jig-theme/);
