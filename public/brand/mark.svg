@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Jig">
-  <title>Jig</title>
-  <rect width="64" height="64" rx="15" fill="#4f46e5"/>
-  <path d="M41 14v22c0 7.6-5 12.5-12 12.5-4.4 0-7.6-1.8-9.8-5" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="16.5" y="13.5" width="9" height="9" rx="2.5" fill="#fdba74"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Skillcaster">
+  <title>Skillcaster</title>
+  <rect x=".5" y=".5" width="63" height="63" rx="14.5" fill="#1c1917" stroke="#57534e" stroke-width="1"/>
+  <path d="M47 20H28a7 7 0 0 0 0 14h8a7 7 0 0 1 0 14H17" fill="none" stroke="#fb923c" stroke-width="8.5" stroke-linejoin="round"/>
+  <rect x="42.5" y="15.5" width="9" height="9" rx="2.5" fill="#fdba74"/>
 </svg>

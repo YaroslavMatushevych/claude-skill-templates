@@ -1,22 +1,28 @@
 ---
 name: investigate
-description: Find out where something is or why something happens, and answer with proof, without editing files. Use when asked where, how or why about the code or a failure.
+description: Find where something is, how it works or why it fails, and answer with proof: a file and line, or command output. Never edits files. Use when the user asks where something is, how it works, why it fails or what causes an error. Do not use to fix the problem.
 argument-hint: [question or symptom]
+model: sonnet
+effort: medium
 disallowed-tools: Write Edit NotebookEdit
 context: fork
+background: false
 ---
 Question: $ARGUMENTS
 
-1. Say what you will look at first. Search by name, then by usage. Use Grep and Glob before you read whole files.
-2. If the question is about a failure, reproduce it or find its exact output first. Then write three possible causes, ranked by how likely and how cheap they are to check. Test the cheapest one.
-3. Answer in at most 20 lines. Put the direct answer first, then the proof: file and line, or the command output.
-4. Say what you did not find, and what would settle any doubt.
-5. Stop after three dead ends. Report what you ruled out.
+You start with no chat history. If the question is empty, stop and say what you need.
+
+1. Say what you will search first. Search by name, then by usage. Use Grep and Glob before you read whole files.
+2. If the question is about a failure, get the exact error output first. Reproduce the failure if you can.
+3. For a failure, write three possible causes. Rank them by how likely each one is and how cheap it is to check. Test the cheapest one first.
+4. Answer in at most 20 lines. Put the direct answer first. Then give the proof: a file and line, or the command output.
+5. Say what you did not find, and what would settle any doubt.
+6. Stop after three dead ends. Report what you ruled out.
 
 ## Rules
 
 - Do not edit anything. Run only commands that read.
-- Every claim has proof. No proof, no claim.
+- Every claim has proof. If you have no proof, do not make the claim.
 
 ## Gotchas
 

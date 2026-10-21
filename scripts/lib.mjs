@@ -120,6 +120,8 @@ export function templateInfo(kind, name) {
     disallowed: (fields["disallowed-tools"] ?? "").split(/\s+/).filter(Boolean),
     purpose: instructionField(instructions, "Purpose"),
     useWhen: instructionField(instructions, "Use when"),
+    notFor: instructionField(instructions, "Do not use when"),
+    how: instructionField(instructions, "How it works"),
     examples: instructionField(instructions, "Examples").split(";").map((x) => x.trim()).filter(Boolean),
     change: instructionField(instructions, "Change"),
     keep: instructionField(instructions, "Keep"),
@@ -408,9 +410,9 @@ export function checkSkill(folder) {
   const name = fields.name ?? "";
   if (!name) errors.push("Missing `name`.");
   else {
-    if (!/^[a-z0-9-]+$/.test(name)) errors.push("`name` may only have lowercase letters, digits and hyphens.");
+    if (!NAME_RE.test(name)) errors.push("`name` may only have lowercase letters, digits and single hyphens, and it must not start or end with a hyphen.");
     if (name.length > MAX_NAME) errors.push(`\`name\` is longer than ${MAX_NAME} characters.`);
-    if (/anthropic|claude/.test(name)) errors.push("`name` must not contain `anthropic` or `claude`.");
+    if (/anthropic|claude/.test(name)) warnings.push("The Claude platform does not allow `anthropic` or `claude` in a skill name. Claude Code itself accepts it, but the skill will not upload to the platform.");
     if (!isTemplate && name !== basename(folder)) warnings.push(`\`name\` (${name}) differs from the folder name (${basename(folder)}).`);
   }
 
@@ -425,14 +427,18 @@ export function checkSkill(folder) {
   }
 
   const lines = body.split("\n").length;
-  if (lines >= MAX_BODY_LINES) errors.push(`SKILL.md body has ${lines} lines. Keep it under ${MAX_BODY_LINES}.`);
+  if (lines >= MAX_BODY_LINES) warnings.push(`SKILL.md body has ${lines} lines. The guidance is to keep it under ${MAX_BODY_LINES}. Move detail into reference files.`);
   if (!isTemplate) {
     if (/^TEMPLATE:/m.test(body)) errors.push("A `TEMPLATE:` comment line is still in the file. Delete it.");
-    if (/<[a-z][a-z -]*>/i.test(body.replace(/`[^`]*`/g, ""))) warnings.push("The body has `<placeholder>` text outside code. Fill it in.");
+    if (/<[a-z][a-z -]*>/i.test(body.replace(/`[^`]*`/g, "").replace(/<!--[\s\S]*?-->/g, ""))) warnings.push("The body has `<placeholder>` text outside code. Fill it in.");
+    if (/<!--[\s\S]*?-->/.test(body)) warnings.push("The body still has guidance comments (`<!-- ... -->`) from the template. Replace each one with your content, or delete it.");
   }
   const pointers = [...new Set([...body.matchAll(/(?:references|scripts)\/[A-Za-z0-9._-]+/g)].map((m) => m[0]))];
   for (const p of pointers) {
-    if (!existsSync(join(folder, p))) errors.push(`SKILL.md points to \`${p}\`, but the file does not exist.`);
+    if (existsSync(join(folder, p))) continue;
+    // An instruction to read or run the file is an error. Any other mention may be a path in another project.
+    const instructed = body.split("\n").some((l) => l.includes(p) && /\b(read|run|open|load|see)\b/i.test(l));
+    (instructed ? errors : warnings).push(`SKILL.md ${instructed ? "points to" : "mentions"} \`${p}\`, but the file does not exist${instructed ? "" : " in this skill. Ignore this if it is a path in your project"}.`);
   }
   const refDir = join(folder, "references");
   if (existsSync(refDir)) {
@@ -444,7 +450,7 @@ export function checkSkill(folder) {
       }
     }
   }
-  if ((fields["allowed-tools"] || lists["allowed-tools"]) && /read[- ]only|does not edit|without editing|cannot edit/i.test(`${description} ${body}`)) {
+  if ((fields["allowed-tools"] || lists["allowed-tools"]) && /read[- ]only|does not edit|never edits?|without editing|cannot edit/i.test(`${description} ${body}`)) {
     warnings.push("`allowed-tools` only pre-approves tools. It does not stop Claude from using others. To block edits, use `disallowed-tools: Write Edit NotebookEdit`.");
   }
   const caps = (body.match(/\b(ALWAYS|NEVER|MUST)\b/g) ?? []).length;
@@ -481,10 +487,12 @@ export function checkAgent(file) {
     const base = t.replace(/\(.*$/, "");
     if (!KNOWN_TOOLS.has(base) && !base.startsWith("mcp__")) warnings.push(`\`${t}\` is not a tool name that Claude Code knows.`);
   }
-  if (/read[- ]only|cannot edit|does not edit/i.test(description) && tools.some((t) => WRITE_TOOLS.includes(t))) {
+  if (/read[- ]only/i.test(description) && tools.some((t) => WRITE_TOOLS.includes(t))) {
     errors.push("The description says read-only, but the tools include an edit tool (Edit, Write or NotebookEdit). The tool list is what keeps it read-only. Remove it.");
+  } else if (/cannot edit|does not edit|never edits?/i.test(description) && tools.some((t) => WRITE_TOOLS.includes(t))) {
+    warnings.push("The description says the agent does not edit, but the tools include an edit tool (Edit, Write or NotebookEdit). Check that the description is right, or remove the tool.");
   }
-  if (/read[- ]only|cannot edit|does not edit/i.test(description) && tools.some((t) => SHELL_TOOLS.includes(t))) {
+  if (/read[- ]only|cannot edit|does not edit|never edits?/i.test(description) && tools.some((t) => SHELL_TOOLS.includes(t))) {
     warnings.push("The description says read-only, but the tools include a shell (Bash or PowerShell). A shell can write files. Remove it for a hard guarantee.");
   }
   if (fields.maxTurns && !/^\d+$/.test(fields.maxTurns)) errors.push("`maxTurns` must be a number.");

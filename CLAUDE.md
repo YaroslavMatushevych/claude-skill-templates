@@ -12,7 +12,7 @@ To build a skill:
 6. `node scripts/skill.mjs check <skill-folder>`. Fix every error. Read `docs/checklist.md` for the rest.
 7. Run the skill on three real tasks. Read the whole transcript. Fix the skill, not the task.
 
-To add a template: create `templates/<name>/SKILL.md` (or `agent-templates/<name>/AGENT.md`) that works as it is, with no placeholders, and `INSTRUCTIONS.md` with **Purpose**, **Use when**, **Change**, **Keep** and **Test**. Run `npm test`.
+To add a template: create `templates/<name>/SKILL.md` (or `agent-templates/<name>/AGENT.md`) that works as it is, with no placeholders (`knowledge` is the one exception: a skeleton with guidance comments, which the check flags until they are replaced), and `INSTRUCTIONS.md` with **Purpose**, **Use when**, **Do not use when**, **Examples**, **How it works**, **Change**, **Keep** and **Test**. **Change** names the exact lines and gives an example. **Keep** gives the reason for each item. **Test** says what a pass and a fail look like. Run `npm test`.
 
 A read-only claim must be true. In a skill use `disallowed-tools: Write Edit NotebookEdit`, because `allowed-tools` does not restrict. In an agent use a plain `tools:` list with no `Edit`, `Write` or `Bash`, because a pattern such as `Bash(git log *)` does not limit Bash.
 

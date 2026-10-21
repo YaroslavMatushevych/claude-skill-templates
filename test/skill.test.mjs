@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -96,5 +96,57 @@ test("check fails when SKILL.md points to a missing file", () => {
   const bad = run(["check", ".claude/skills/checker"], cwd);
   assert.equal(bad.status, 1);
   assert.match(bad.stdout, /references\/gone\.md/);
+  rmSync(cwd, { recursive: true });
+});
+
+test("every template explains itself with all eight INSTRUCTIONS fields", async () => {
+  const { listTemplates } = await import("../scripts/lib.mjs");
+  for (const kind of ["skill", "agent"]) {
+    for (const t of listTemplates(kind)) {
+      for (const f of ["purpose", "useWhen", "notFor", "how", "change", "keep", "test"]) {
+        assert.ok(t[f] && t[f].length > 20, `${kind} ${t.name} is missing ${f}`);
+      }
+      assert.ok(t.examples.length >= 3, `${kind} ${t.name} needs three examples`);
+      assert.doesNotMatch(JSON.stringify(t), /—/, `${t.name} has an em-dash`);
+    }
+  }
+});
+
+test("check: only a certain problem is an error, a doubtful one is a warning", () => {
+  const cwd = tmp();
+  run(["new", "dates", "--template", "generate"], cwd);
+  const file = join(cwd, ".claude/skills/dates/SKILL.md");
+  const base = readFileSync(file, "utf8");
+
+  // A path in prose that is not an instruction to read or run it: warning, not error.
+  writeFileSync(file, base + "\nThe build output goes to scripts/out.js in your project.\n");
+  let r = run(["check", ".claude/skills/dates"], cwd);
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /mentions `scripts\/out\.js`/);
+
+  // A long body is advice (the docs say "keep it under 500 lines"), not a hard limit.
+  writeFileSync(file, base + "\nline\n".repeat(520));
+  r = run(["check", ".claude/skills/dates"], cwd);
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /520 lines|under 500/);
+
+  // An agent that says "does not edit" but has Edit is a warning. "Read-only" with Edit is an error.
+  const agents = join(cwd, ".claude/agents");
+  mkdirSync(agents, { recursive: true });
+  writeFileSync(join(agents, "a.md"), "---\nname: a\ndescription: Writes tests. Does not edit the product code. Use when asked.\ntools: Read, Edit\nmaxTurns: 5\n---\nWrite tests. Stop after 5 turns.\n");
+  r = run(["check", ".claude/agents/a.md"], cwd);
+  assert.equal(r.status, 0);
+  writeFileSync(join(agents, "b.md"), "---\nname: b\ndescription: Read-only reviewer. Use when asked.\ntools: Read, Edit\nmaxTurns: 5\n---\nReview. Stop after 5 turns.\n");
+  r = run(["check", ".claude/agents/b.md"], cwd);
+  assert.equal(r.status, 1);
+  rmSync(cwd, { recursive: true });
+});
+
+test("a knowledge skill warns until its guidance comments are replaced", () => {
+  const cwd = tmp();
+  run(["new", "dates", "--template", "knowledge"], cwd);
+  const r = run(["check", ".claude/skills/dates"], cwd);
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /guidance comments/);
   rmSync(cwd, { recursive: true });
 });

@@ -1,25 +1,24 @@
 ---
 name: knowledge
-description: Rules and known traps for one tool, library or part of the codebase. Use when writing or changing code that touches it.
+description: Rules and known traps for one tool, library or part of the codebase, so that Claude does not repeat known mistakes. Use when writing or changing code that touches it.
 ---
-Claude knows the basics. These are the traps and the rules that are specific here.
+Claude knows the basics. This page lists only what is specific to this project: the traps and the rules.
 
 ## Pick the approach
 
+<!-- One row per common task. Name the exact function, option or file to use. -->
+
 | Task | Do this |
 |---|---|
-| The common task | The one approach to use, with the exact function or option. |
-| The second common task | The approach. |
 
 ## Traps
 
-- **Name of the trap:** use the right way, not the wrong way. Reason: what breaks, and how the failure looks.
-- **Another trap:** the fix and the reason.
+<!-- One bullet per real mistake. Say what to do, why, and how the failure looks. Start from past chats and pull request comments. -->
 
 ## Rules
 
-- A rule that is true for this part of the project, with the reason in half a sentence.
+<!-- One bullet per rule that is true for this part of the project. Give the reason in half a sentence. -->
 
 ## Gotchas
 
-- A mistake that was made here in a real session, and what to do instead.
+<!-- One bullet per mistake that was made in a real session, and what to do instead. -->

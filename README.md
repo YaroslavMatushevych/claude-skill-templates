@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="public/brand/logo-light.svg">
-    <img src="public/brand/logo.svg" alt="Jig" height="72">
+    <img src="public/brand/logo.svg" alt="Skillcaster" height="72">
   </picture>
 </p>
 
@@ -10,26 +10,36 @@ Pick a template, fill in a few lines, check it, and save a skill or an agent.<br
 A web page, a command line, 6 skill templates and 5 agent templates.</p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-4f46e5"></a>
-  <img alt="Node 18 or newer" src="https://img.shields.io/badge/node-%E2%89%A518-4f46e5">
-  <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-0-4f46e5">
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-c2410c"></a>
+  <img alt="Node 18 or newer" src="https://img.shields.io/badge/node-%E2%89%A518-c2410c">
+  <img alt="No dependencies" src="https://img.shields.io/badge/dependencies-0-c2410c">
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/skill.png" alt="Jig, Skills page: six templates on the left, the generated SKILL.md on the right" width="900">
+  <img src="docs/screenshots/skill.png" alt="Skillcaster, Skills page: six templates on the left, the generated SKILL.md on the right" width="900">
 </p>
 
 ## Quick start
 
 ```bash
-git clone https://github.com/YaroslavMatushevych/claude-skill-templates ~/jig
+git clone https://github.com/YaroslavMatushevych/skillcaster ~/skillcaster
 cd ~/your-project
-node ~/jig/scripts/ui.mjs
+node ~/skillcaster/scripts/ui.mjs
 ```
 
 The page opens in your browser. It saves into `.claude/skills` or `.claude/agents` in the folder where you ran the command. You need Node 18 or newer. There is nothing to install.
 
-**Why "Jig".** A jig is a workshop tool that holds the work in a fixed shape, so every piece comes out the same. The templates do that for skills and agents.
+**Why "Skillcaster".** You cast a piece by pouring metal into a mold, and every piece has the same shape. The templates are the molds. You pour your task into one and get a skill or an agent in a fixed, checked shape.
+
+## Example: a release-notes skill in five steps
+
+1. Run `node ~/skillcaster/scripts/ui.mjs` in your project. Choose **Build a skill**.
+2. Pick `workflow`. The box under the cards says it is for a task you repeat in the same order, and that a check follows every step.
+3. Name it `release-notes`. Write the description: `Write release notes from the git log since the last tag. Use when asked for release notes or a changelog entry.`
+4. In the file on the right, replace steps 2 to 4 with your own: read `git log` since the last tag, group the commits, write the entry into `CHANGELOG.md`. Keep the check after each step.
+5. Open the **Checks** tab. When there are no errors, press **Save to project**. In Claude Code, type `/release-notes`.
+
+The result is a plain file at `.claude/skills/release-notes/SKILL.md`. You can edit it by hand at any time.
 
 ## What it looks like
 
@@ -44,7 +54,7 @@ The page opens in your browser. It saves into `.claude/skills` or `.claude/agent
   </tr>
   <tr>
     <td width="50%"><img src="docs/screenshots/docs.png" alt="The Docs page: what to use when, and why"></td>
-    <td width="50%"><img src="docs/screenshots/dark.png" alt="Jig in the dark theme"></td>
+    <td width="50%"><img src="docs/screenshots/dark.png" alt="Skillcaster in the dark theme"></td>
   </tr>
   <tr>
     <td><b>A Docs page.</b> How to use it, what to pick when, and why each template is built the way it is.</td>
@@ -83,7 +93,7 @@ A common chain: `explorer` finds the code, `planner` writes a plan, you approve 
 | [`knowledge`](templates/knowledge/) | Your traps and rules for one tool, library or area. No steps. | Claude repeats a mistake with it. |
 | [`guardrail`](templates/guardrail/) | One rule to follow before a claim or an action. | Claude skips a step when in a hurry. |
 
-`knowledge` is the one template that starts empty. It has no content until you list your own traps and rules in it. The other five work as they are.
+`knowledge` is a skeleton: headings with a guidance comment under each one. You fill it with your own traps and rules, and the check warns until you do. [`docs/example-knowledge.md`](docs/example-knowledge.md) is a filled-in example. The other five work as they are.
 
 ## Agent templates
 
@@ -95,7 +105,7 @@ A common chain: `explorer` finds the code, `planner` writes a plan, you approve 
 | [`reviewer`](agent-templates/reviewer/) | Read, Grep, Glob | sonnet | You want a review that cannot change anything. You pass it the diff. |
 | [`tester`](agent-templates/tester/) | Read, Edit, Write, Grep, Glob, Bash | sonnet | You have acceptance criteria and want failing tests first. |
 
-Every template has an `INSTRUCTIONS.md` with the same parts: when to use it, examples, what to edit for your project, what to keep, and how to test it. The builder shows the examples under the cards. The Docs page explains when to use each template and why.
+Every template has an `INSTRUCTIONS.md` with the same parts: **Purpose**, **Use when**, **Do not use when**, **Examples**, **How it works**, **Change**, **Keep** and **Test**. **Change** names the exact lines to edit and gives an example. **Keep** says what to leave alone and why. **Test** says what to run and what a pass looks like. The builder shows the first five under the cards. The Docs page explains when to use each template and why.
 
 ## What you can set
 
@@ -165,9 +175,9 @@ Add this to your `CLAUDE.md`:
 
 ```markdown
 ## Building skills and agents
-To create or change a skill or an agent, use the constructor in `~/jig`:
-1. `node ~/jig/scripts/skill.mjs templates` lists the templates. Pick one that fits.
-2. `node ~/jig/scripts/skill.mjs new <name> --template <template> --description "<what it makes. Use when ...>"` for a skill, or `new-agent` for an agent.
+To create or change a skill or an agent, use the constructor in `~/skillcaster`:
+1. `node ~/skillcaster/scripts/skill.mjs templates` lists the templates. Pick one that fits.
+2. `node ~/skillcaster/scripts/skill.mjs new <name> --template <template> --description "<what it makes. Use when ...>"` for a skill, or `new-agent` for an agent.
 3. Edit the file. The command prints what to change and what to keep.
 4. For each long document, run `add-reference <skill-folder> <file-or-url> --when "<when to read it>"`.
 5. Run `check <skill-folder-or-agent-file>` and fix every error.

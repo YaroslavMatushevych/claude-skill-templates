@@ -36,11 +36,11 @@ const post = (path, body, origin = BASE) =>
 
 test("serves the page and the template lists", async () => {
   const page = await (await fetch(BASE)).text();
-  assert.match(page, /<title>Jig: skill builder/);
+  assert.match(page, /<title>Skillcaster: skill builder/);
   for (const id of ["splitter", "grip", "swap", "reset-layout", "docs-view", "nav-docs", "nav-skill", "nav-agent", "theme"]) assert.match(page, new RegExp(`id="${id}"`), id);
   const app = await (await fetch(`${BASE}/app.js`)).text();
   assert.match(app, /skill-builder-layout/);
-  assert.match(app, /jig-theme/);
+  assert.match(app, /skillcaster-theme/);
   assert.doesNotMatch(page, /id="status"/);
   // the Docs page covers the main topics
   for (const h of ["Quick start", "Skill or agent?", "Which template?", "Who can start a skill", "what really limits Claude", "Models and effort", "References and scripts", "The checks", "Save or download", "Common questions"]) assert.ok(page.includes(h), h);
@@ -50,7 +50,7 @@ test("serves the page and the template lists", async () => {
   assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
   assert.equal((await fetch(`${BASE}/brand/icon-512.png`)).headers.get("content-type"), "image/png");
   const manifest = await (await fetch(`${BASE}/site.webmanifest`)).json();
-  assert.equal(manifest.short_name, "Jig");
+  assert.equal(manifest.short_name, "Skillcaster");
   assert.equal((await fetch(`${BASE}/brand/../../package.json`)).status, 404);
   assert.equal((await fetch(`${BASE}/brand/secret.txt`)).status, 404);
   assert.equal((await fetch(`${BASE}/scripts/lib.mjs`)).status, 404);

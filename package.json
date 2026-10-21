@@ -1,7 +1,7 @@
 {
-  "name": "claude-skill-templates",
+  "name": "skillcaster",
   "version": "1.0.0",
-  "description": "Jig: skill builder for Claude Code. A web UI, a command line, six skill templates and five agent templates.",
+  "description": "Skillcaster: skill builder for Claude Code. A web UI, a command line, six skill templates and five agent templates.",
   "private": false,
   "type": "module",
   "license": "MIT",
@@ -11,8 +11,8 @@
     "start": "node scripts/ui.mjs",
     "test": "node --test"
   },
-  "repository": { "type": "git", "url": "git+https://github.com/YaroslavMatushevych/claude-skill-templates.git" },
-  "bugs": { "url": "https://github.com/YaroslavMatushevych/claude-skill-templates/issues" },
-  "homepage": "https://github.com/YaroslavMatushevych/claude-skill-templates#readme",
-  "keywords": ["claude-code", "claude", "skills", "agents", "subagents", "templates", "builder", "jig", "ai", "developer-tools"]
+  "repository": { "type": "git", "url": "git+https://github.com/YaroslavMatushevych/skillcaster.git" },
+  "bugs": { "url": "https://github.com/YaroslavMatushevych/skillcaster/issues" },
+  "homepage": "https://github.com/YaroslavMatushevych/skillcaster#readme",
+  "keywords": ["claude-code", "claude", "skills", "agents", "subagents", "templates", "builder", "skillcaster", "ai", "developer-tools"]
 }

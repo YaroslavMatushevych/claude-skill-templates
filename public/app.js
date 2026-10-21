@@ -9,7 +9,7 @@ const TOOL_TIPS = {
   Read: "Read files.", Grep: "Search inside files.", Glob: "Find files by name pattern.", Edit: "Change part of a file.", Write: "Create or overwrite a file.",
   NotebookEdit: "Edit Jupyter notebook cells. It is an edit tool.", Bash: "Run shell commands. A shell can also write files, so it is not read-only.",
   PowerShell: "Run PowerShell commands on Windows. It can also write files.", WebFetch: "Download a web page.", WebSearch: "Search the web.",
-  TodoWrite: "Keep a to-do list while it works.", LSP: "Code intelligence: definitions and references.", Agent: "Start another agent.", Skill: "Run a skill.",
+  TodoWrite: "Keep a to-do list while it works.", LSP: "Code intelligence: definitions and references.", Agent: "Start another agent.", Skill: "Run a skill. Block it to stop Claude from starting any other skill.",
 };
 
 // Who can start a skill. Both fields are in the docs: disable-model-invocation and user-invocable.
@@ -60,6 +60,20 @@ function setModel(prefix, value) {
   $(`${prefix}model-other`).value = known ? "" : value;
 }
 
+// ---------- worker type of a forked skill: a list, plus "Other" for any agent name ----------
+
+function agentTypeValue() {
+  const v = $("agent-type").value;
+  return v === "__other" ? $("agent-type-other").value.trim() : v;
+}
+function setAgentType(value) {
+  const select = $("agent-type");
+  const known = [...select.options].some((o) => o.value === value);
+  select.value = known ? value : value ? "__other" : "";
+  $("agent-type-other").hidden = select.value !== "__other";
+  $("agent-type-other").value = known ? "" : value;
+}
+
 // ---------- tool pickers: chips for the known tools, plus any name or rule you add ----------
 
 const PICKERS = [
@@ -68,10 +82,31 @@ const PICKERS = [
   { set: "tools", box: "tools", input: "tools-custom", add: "tools-add", kind: "agent", example: "mcp__github__*" },
   { set: "removed", box: "removed", input: "removed-custom", add: "removed-add", kind: "agent", example: "mcp__github__*" },
 ];
+// ---------- editable chip lists: add and remove boxes, saved in this browser ----------
+
+const CHIPS_KEY = "skillcaster-chips";
+function chipStore() { try { return JSON.parse(localStorage.getItem(CHIPS_KEY)) || {}; } catch { return {}; } }
+function chipSave(all) { try { localStorage.setItem(CHIPS_KEY, JSON.stringify(all)); } catch { /* storage can be blocked */ } }
+function chipState(id) { const s = chipStore()[id] || {}; return { added: s.added || [], hidden: s.hidden || [] }; }
+function chipUpdate(id, fn) { const all = chipStore(); const cur = chipState(id); fn(cur); all[id] = cur; chipSave(all); }
+function chipReset(id) { const all = chipStore(); delete all[id]; chipSave(all); }
+// The names to show: the defaults without the ones you removed, then the ones you added, then anything selected.
+function chipNames(id, defaults, selected) {
+  const c = chipState(id);
+  const names = [...defaults.filter((n) => !c.hidden.includes(n)), ...c.added.filter((n) => !defaults.includes(n))];
+  for (const n of selected) if (!names.includes(n)) names.push(n);
+  return names;
+}
+const chipCustomized = (id) => { const c = chipState(id); return c.added.length > 0 || c.hidden.length > 0; };
+function chipHtml(name, checked, { tip = "", cls = "", extra = "" } = {}) {
+  return `<span class="pickchip"><label class="${cls}"${tip ? ` data-tip="${esc(tip)}"` : ""}><input type="checkbox" value="${esc(name)}"${checked ? " checked" : ""}>${esc(name)}${extra}</label><button type="button" class="chipx" data-x="${esc(name)}" aria-label="Remove ${esc(name)} from this list" title="Remove from this list">\u00d7</button></span>`;
+}
+const chipResetHtml = (id) => (chipCustomized(id) ? `<button type="button" class="chipreset" data-reset="${esc(id)}">Restore the default list</button>` : "");
+
 function renderPicker(p) {
   const set = state.sets[p.set];
-  const names = [...TOOL_LIST, ...[...set].filter((n) => !TOOL_LIST.includes(n))];
-  $(p.box).innerHTML = names.map((t) => `<label data-tip="${esc(TOOL_TIPS[t] || "A tool or an MCP rule you added.")}"><input type="checkbox" value="${esc(t)}"${set.has(t) ? " checked" : ""}>${esc(t)}</label>`).join("");
+  const names = chipNames(p.set, TOOL_LIST, set);
+  $(p.box).innerHTML = names.map((t) => chipHtml(t, set.has(t), { tip: TOOL_TIPS[t] || "" })).join("") + chipResetHtml(p.set);
 }
 
 // ---------- payloads ----------
@@ -86,7 +121,7 @@ function fieldsPayload() {
       model: modelValue("s"),
       effort: $("seffort").value,
       context: $("fork").checked,
-      agent: $("fork").checked ? $("agent-type").value.trim() : "",
+      agent: $("fork").checked ? agentTypeValue() : "",
       when_to_use: $("when_to_use").value,
       "argument-hint": $("hint").value,
       arguments: list($("arguments").value),
@@ -159,7 +194,7 @@ async function pick(name, force) {
   document.querySelectorAll(".tpl").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.t === name)));
   const t = state.data[state.kind].find((x) => x.name === name);
   $("examples").innerHTML = t.examples?.length
-    ? `<b>${esc(t.name)} is good for</b><ul>${t.examples.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
+    ? `<span class="ti-label">${esc(t.name)} is good for</span><ul>${t.examples.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
     : "";
 
   // Fill the form with what the template really has, so the form and the file agree.
@@ -169,7 +204,7 @@ async function pick(name, force) {
   if (state.kind === "skill") {
     setStarter(fm["disable-model-invocation"] === "true" ? "you" : fm["user-invocable"] === "false" ? "claude" : "both");
     setModel("s", fm.model ?? ""); $("seffort").value = fm.effort ?? "";
-    $("fork").checked = fm.context === "fork"; $("agent-type").value = fm.agent ?? ""; $("agent-row").hidden = !$("fork").checked;
+    $("fork").checked = fm.context === "fork"; setAgentType(fm.agent ?? ""); $("agent-row").hidden = !$("fork").checked;
     toSet("allowed", fm["allowed-tools"]); toSet("blocked", fm["disallowed-tools"]);
     $("when_to_use").value = fm.when_to_use ?? ""; $("hint").value = fm["argument-hint"] ?? "";
     $("arguments").value = list(fm.arguments).join(", "); $("paths").value = list(fm.paths).join(", ");
@@ -320,11 +355,20 @@ function skillChoices() {
   return [...out.values()];
 }
 function renderSkillPick() {
-  $("skillpick").innerHTML = skillChoices().map((c) => {
-    const off = c.userStarted && !state.sets.skills.has(c.name);
-    const title = c.userStarted ? "Only you start this skill, so an agent cannot load it." : c.tag;
-    return `<label data-tip="${esc(title)}"${off ? ' style="opacity:.5"' : ""}><input type="checkbox" value="${esc(c.name)}"${state.sets.skills.has(c.name) ? " checked" : ""}${off ? " disabled" : ""}>${esc(c.name)}</label>`;
-  }).join("");
+  const all = skillChoices();
+  const defaults = all.map((c) => c.name);
+  const shown = chipNames("skills", defaults, state.sets.skills);
+  const choices = shown.map((n) => all.find((c) => c.name === n) || { name: n, userStarted: false });
+  $("skillpick").innerHTML = choices.map((c) => chipHtml(c.name, state.sets.skills.has(c.name), {
+    tip: c.userStarted ? "Only you start this skill, so an agent cannot load it." : "",
+    cls: c.userStarted ? "warn" : "",
+    extra: c.userStarted ? ' <span class="mark" aria-hidden="true">!</span>' : "",
+  })).join("") + chipResetHtml("skills");
+  const bad = choices.filter((c) => c.userStarted && state.sets.skills.has(c.name)).map((c) => c.name);
+  $("skillpick-note").hidden = !bad.length;
+  $("skillpick-note").textContent = bad.length
+    ? `${bad.join(", ")}: only you can start ${bad.length > 1 ? "these skills" : "this skill"}, so the agent cannot load ${bad.length > 1 ? "them" : "it"}. In the skill, set "Who can start it" to "You or Claude". Or leave ${bad.length > 1 ? "them" : "it"} out.`
+    : "";
 }
 
 // ---------- actions ----------
@@ -375,15 +419,25 @@ function wire() {
   $("outDir").addEventListener("input", scheduleCheck);
   $("draft").addEventListener("input", () => { state.dirty = true; scheduleCheck(); });
   $("reset").onclick = () => regenerate(true);
-  for (const id of ["seffort", "aeffort", "maxTurns", "permission", "memory", "color", "mcp", "when_to_use", "hint", "arguments", "paths", "agent-type", "smodel-other", "amodel-other"]) $(id).addEventListener("input", optionChanged);
+  $("agent-type").addEventListener("change", () => { $("agent-type-other").hidden = $("agent-type").value !== "__other"; optionChanged(); });
+  for (const id of ["seffort", "aeffort", "maxTurns", "permission", "memory", "color", "mcp", "when_to_use", "hint", "arguments", "paths", "agent-type-other", "smodel-other", "amodel-other"]) $(id).addEventListener("input", optionChanged);
   for (const id of ["fork", "background", "isolation"]) $(id).addEventListener("change", () => { if (id === "fork") $("agent-row").hidden = !$("fork").checked; optionChanged(); });
   for (const prefix of ["s", "a"]) $(`${prefix}model`).addEventListener("change", () => { $(`${prefix}model-other`).hidden = $(`${prefix}model`).value !== "__other"; optionChanged(); });
   for (const m of Object.keys(STARTERS)) $(`start-${m}`).onclick = () => { setStarter(m); optionChanged(); };
   for (const p of PICKERS) {
     $(p.box).addEventListener("change", (e) => { e.target.checked ? state.sets[p.set].add(e.target.value) : state.sets[p.set].delete(e.target.value); optionChanged(); });
+    $(p.box).addEventListener("click", (e) => {
+      const x = e.target.closest(".chipx"); const reset = e.target.closest(".chipreset");
+      if (x) {
+        const n = x.dataset.x;
+        chipUpdate(p.set, (c) => { c.added = c.added.filter((a) => a !== n); if (TOOL_LIST.includes(n) && !c.hidden.includes(n)) c.hidden.push(n); });
+        state.sets[p.set].delete(n); renderPicker(p); optionChanged();
+      } else if (reset) { chipReset(p.set); renderPicker(p); }
+    });
     const add = () => {
       const v = $(p.input).value.trim();
       if (!v) return;
+      chipUpdate(p.set, (c) => { c.hidden = c.hidden.filter((h) => h !== v); if (!TOOL_LIST.includes(v) && !c.added.includes(v)) c.added.push(v); });
       state.sets[p.set].add(v); $(p.input).value = ""; renderPicker(p); optionChanged();
     };
     $(p.add).onclick = add;
@@ -392,13 +446,23 @@ function wire() {
   }
   $("skillpick").addEventListener("change", (e) => {
     e.target.checked ? state.sets.skills.add(e.target.value) : state.sets.skills.delete(e.target.value);
+    renderSkillPick();
     optionChanged();
   });
   const addSkill = () => {
     const n = $("skill-custom").value.trim();
     if (!NAME_RE.test(n)) { toast("Use lowercase letters, digits and hyphens, for example release-notes."); return; }
+    chipUpdate("skills", (c) => { c.hidden = c.hidden.filter((h) => h !== n); if (!c.added.includes(n)) c.added.push(n); });
     state.sets.skills.add(n); $("skill-custom").value = ""; renderSkillPick(); optionChanged();
   };
+  $("skillpick").addEventListener("click", (e) => {
+    const x = e.target.closest(".chipx"); const reset = e.target.closest(".chipreset");
+    if (x) {
+      const n = x.dataset.x;
+      chipUpdate("skills", (c) => { c.added = c.added.filter((a) => a !== n); if (skillChoices().some((s) => s.name === n) && !c.hidden.includes(n)) c.hidden.push(n); });
+      state.sets.skills.delete(n); renderSkillPick(); optionChanged();
+    } else if (reset) { chipReset("skills"); renderSkillPick(); }
+  });
   $("skill-add").onclick = addSkill;
   $("skill-custom").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } });
   $("add-ref-text").onclick = () => { state.refs.push({ kind: "text" }); renderRefs(); };
@@ -487,7 +551,7 @@ const THEMES = [
 ];
 function initTheme() {
   let saved = "system";
-  try { saved = localStorage.getItem("jig-theme") || "system"; } catch { /* ignore */ }
+  try { saved = localStorage.getItem("skillcaster-theme") || "system"; } catch { /* ignore */ }
   let index = Math.max(0, THEMES.findIndex((t) => t.id === saved));
   const apply = () => {
     const t = THEMES[index];
@@ -496,7 +560,7 @@ function initTheme() {
     $("theme").textContent = t.label;
     $("theme").dataset.tip = t.tip;
     $("theme").setAttribute("aria-label", t.tip);
-    try { localStorage.setItem("jig-theme", t.id); } catch { /* ignore */ }
+    try { localStorage.setItem("skillcaster-theme", t.id); } catch { /* ignore */ }
   };
   $("theme").onclick = () => { index = (index + 1) % THEMES.length; apply(); };
   apply();
@@ -515,7 +579,7 @@ function showView(view) {
     if (on) $(`nav-${k}`).setAttribute("aria-current", "page");
   }
   if (!docs && state.data && state.kind !== view) setKind(view);
-  document.title = docs ? "Docs: Jig, skill builder for Claude Code" : "Jig: skill builder for Claude Code";
+  document.title = docs ? "Docs: Skillcaster, skill builder for Claude Code" : "Skillcaster: skill builder for Claude Code";
   window.scrollTo(0, 0);
 }
 function route() {
@@ -661,7 +725,7 @@ function initLayout() {
     return;
   }
   const agents = ["Explore", "Plan", "general-purpose", ...state.data.agent.map((a) => a.name)];
-  $("agent-list").innerHTML = [...new Set(agents)].map((a) => `<option value="${esc(a)}">`).join("");
+  $("agent-type").innerHTML = `<option value="">Not set</option>${[...new Set(agents)].map((a) => `<option value="${esc(a)}">${esc(a)}</option>`).join("")}<option value="__other">Other...</option>`;
   $("primary").textContent = state.data.hosted ? "Download .zip" : "Save to project";
   $("download").hidden = !!state.data.hosted;
   wire();
