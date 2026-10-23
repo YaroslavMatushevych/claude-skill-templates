@@ -171,15 +171,19 @@ All run as `node scripts/skill.mjs <command>`.
 
 ## Let Claude build it
 
-Clone this repo to `~/skillcaster`. Then add three lines to your `CLAUDE.md`:
+Clone this repo to `~/skillcaster`. Then add this entry to your `CLAUDE.md`, next to your other topics:
 
 ```markdown
-## Building skills and agents
-Use the builder in `~/skillcaster`.
-Follow @~/skillcaster/BUILDING.md
+<topic-index root="~/skillcaster">
+Read the referenced file before you start.
+<topic name="building" file="BUILDING.md">
+When creating or changing a skill or an agent.
+Never write the file by hand.
+</topic>
+</topic-index>
 ```
 
-The `@` line imports [BUILDING.md](BUILDING.md), which has the steps. Your `CLAUDE.md` stays short, and the steps live in one place.
+The steps are in [BUILDING.md](BUILDING.md). Your `CLAUDE.md` stays short, and the steps live in one place.
 
 Then ask: "Create a skill that writes release notes from the git log."
 

@@ -22,14 +22,18 @@ node ~/skillcaster/scripts/skill.mjs <command>
 
 ## How to use this file
 
-Add three lines to your `CLAUDE.md`:
+Add this entry to your `CLAUDE.md`, next to your other topics:
 
 ```markdown
-## Building skills and agents
-Use the builder in `~/skillcaster`.
-Follow @~/skillcaster/BUILDING.md
+<topic-index root="~/skillcaster">
+Read the referenced file before you start.
+<topic name="building" file="BUILDING.md">
+When creating or changing a skill or an agent.
+Never write the file by hand.
+</topic>
+</topic-index>
 ```
 
-The `@` line imports this file. Your `CLAUDE.md` stays short, and you change the steps in one place.
+The `root` and `file` point to this file. Your `CLAUDE.md` stays short, and you change the steps in one place.
 
 Clone the repo to `~/skillcaster` first.
